@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Morse Code Practice</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: aliceblue;
+      }
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100svw;
+        text-align: center;
+        background-color: lightslategray;
+        z-index: 1000;
+        height: 3svh;
+      }
+      h1 {
+        margin: 0;
+        padding: 0;
+        color: white;
+        font-size: 3svw;
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Morse Code Practice</h1>
+    </header>
+    <main>
+      <!-- 5の行 -->
+      <div class="row-container left-side">
+        <div class="col">
+          <!-- ..... -->
+          <input type="text" class="dot" data-char="5" />
+        </div>
+      </div>
+      <!-- 6の行 -->
+      <div class="row-container right-side">
+        <div class="col">
+          <!-- ..... -->
+          <input type="text" class="dot" data-char="6" />
+        </div>
+      </div>
+      <div class="row-container left-side">
+        <!-- Hの行 -->
+        <div class="col">
+          <!-- .... -->
+          <input type="text" class="dot" data-char="H" />
+        </div>
+        <div class="col">
+          <!-- ....- -->
+          <input type="text" class="dash" data-char="4" />
+        </div>
+      </div>
+      <div class="row-container right-side">
+        <!-- Bの行 -->
+        <div class="col">
+          <!-- .... -->
+          <input type="text" class="dot" data-char="B" />
+        </div>
+        <div class="col">
+          <!-- ....- -->
+          <input type="text" class="dash" data-char="=" />
+        </div>
+      </div>
+
+      <div class="row-container left-side">
+        <!-- Sの行 -->
+        <div class="col">
+          <!-- ... -->
+          <input type="text" class="dot" data-char="S" />
+        </div>
+        <div class="col">
+          <!-- ...ー -->
+          <input type="text" class="dash" data-char="V" />
+        </div>
+        <div class="col">
+          <!-- ...ーー -->
+          <input type="text" class="dash" data-char="3" />
+        </div>
+      </div>
+      <div class="row-container right-side">
+        <!-- Dの行 -->
+        <div class="col">
+          <!-- ... -->
+          <input type="text" class="dot" data-char="D" />
+        </div>
+        <div class="col">
+          <!-- ...ー -->
+          <input type="text" class="dash" data-char="X" />
+        </div>
+        <div class="col">
+          <!-- ...ーー -->
+          <input type="text" class="dot" data-char="/" />
+        </div>
+      </div>
+      <div class="row-container left-side">
+        <!-- Iの行 -->
+        <div class="col">
+          <!-- .. -->
+          <input type="text" class="dot" data-char="I" />
+        </div>
+        <div class="col">
+          <!-- ..- -->
+          <input type="text" class="dash" data-char="U" />
+          <!-- ..-. -->
+          <input type="text" class="dot" data-char="F" />
+        </div>
+        <div class="col">
+          <!-- ..-- -->
+          <input type="text" class="dash" data-char="" />
+          <!-- ..--. -->
+          <input type="text" class="dot" data-char="" />
+          <!-- ..--.. -->
+          <input type="text" class="dot" data-char="?" />
+        </div>
+        <div class="col">
+          <!-- ..--- -->
+          <input type="text" class="dash" data-char="2" />
+        </div>
+      </div>
+
+      <div class="row-container right-side">
+        <!-- Nの行 -->
+        <div class="col">
+          <!-- .. -->
+          <input type="text" class="dot" data-char="N" />
+        </div>
+        <div class="col">
+          <!-- -.- -->
+          <input type="text" class="dash" data-char="K" />
+          <!-- -.-. -->
+          <input type="text" class="dot" data-char="C" />
+        </div>
+        <div class="col">
+          <!-- ..-- -->
+          <input type="text" class="dash" data-char="Y" />
+        </div>
+      </div>
+
+      <!-- Eの行 -->
+      <div class="row-container left-side">
+        <div class="col">
+          <!-- . -->
+          <input type="text" class="dot" data-char="E" />
+        </div>
+        <div class="col">
+          <!-- .- -->
+          <input type="text" class="dash" data-char="A" />
+          <!-- .-. -->
+          <input type="text" class="dot" data-char="R" />
+          <!-- .-.. -->
+          <input type="text" class="dot" data-char="L" />
+        </div>
+        <div class="col">
+          <!-- .-- -->
+          <input type="text" class="dash" data-char="W" />
+          <!-- .--. -->
+          <input type="text" class="dot" data-char="P" />
+        </div>
+        <div class="col">
+          <!-- .--- -->
+          <input type="text" class="dash" data-char="J" />
+        </div>
+        <div class="col">
+          <!-- .---- -->
+          <input type="text" class="dash" data-char="1" />
+        </div>
+      </div>
+
+      <div class="row-container right-side">
+        <!-- Tの行 -->
+        <div class="col">
+          <!-- - -->
+          <input type="text" class="dash" data-char="T" />
+        </div>
+        <div class="col">
+          <!-- - -->
+          <input type="text" class="dash" data-char="M" />
+          <div>
+            <input type="text" class="dot" data-char="G" />
+            <input type="text" class="dash" data-char="Q" />
+          </div>
+          <div>
+            <input type="text" class="dot" data-char="Z" />
+          </div>
+          <div>
+            <input type="text" class="dot" data-char="7" />
+          </div>
+        </div>
+        <div class="col">
+          <!-- - -->
+          <input type="text" class="dash" data-char="O" />
+          <input type="text" class="dot" data-char="" />
+          <input type="text" class="dot" data-char="8" />
+        </div>
+        <div class="col">
+          <!-- - -->
+          <input type="text" class="dash" data-char="" />
+          <input type="text" class="dot" data-char="9" />
+        </div>
+        <div class="col">
+          <!-- - -->
+          <input type="text" class="dash" data-char="0" />
+        </div>
+      </div>
+    </main>
+    <div class="row-container buttons" style="bottom: 0">
+      <button style="bottom: 10%; right: 10%" id="reset">Reset</button>
+      <button style="bottom: 10%; left: 10%" id="show">Show</button>
+      <button style="bottom: 10%; left: 20%" id="check">Check</button>
+    </div>
+    <script>
+      const inputs = document.querySelectorAll("input");
+      const showButton = document.querySelector("#show");
+      const checkButton = document.querySelector("#check");
+      const resetButton = document.querySelector("#reset");
+      showButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          input.value = input.dataset.char;
+        });
+      });
+      checkButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          if (input.value == input.dataset.char) {
+            input.classList.add("correct");
+            input.classList.remove("incorrect");
+          } else {
+            input.classList.add("incorrect");
+            input.classList.remove("correct");
+          }
+        });
+      });
+      resetButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          input.value = "";
+          input.classList.remove("correct", "incorrect");
+        });
+      });
+      //   inputs.forEach((input) => {
+      //     input.value = input.dataset.char;
+      //   });
+    </script>
+  </body>
+</html>

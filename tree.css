@@ -1,0 +1,70 @@
+main {
+  position: relative;
+  width: 100svw;
+  padding-top: 3svh;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  font-size: 1rem;
+  justify-content: start;
+}
+
+input,
+button {
+  text-align: center;
+  font-size: 2svw;
+  height: 1.5em;
+}
+.dot {
+  width: 1.5em;
+  border-radius: 1em;
+}
+.dash {
+  width: 3em;
+  border-radius: 1em;
+}
+.correct {
+  background-color: aquamarine;
+}
+.incorrect {
+  background-color: coral;
+}
+.row-container {
+  height: 14svw;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+.left-side {
+  width: 50svw;
+  flex-direction: row-reverse;
+}
+.right-side {
+  width: 50svw;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+.col {
+  /* border: solid 1px red; */
+  height: 100%;
+  width: 20%;
+  display: flex;
+  flex-direction: column-reverse;
+  row-gap: 2%;
+  align-items: center;
+}
+.col div {
+  display: flex;
+}
+.buttons {
+  align-items: center;
+  justify-content: center;
+}
+.buttons button {
+  margin: 0 1%;
+  height: 3em;
+  width: 10em;
+  background-color: transparent;
+  border-radius: 2em;
+}
