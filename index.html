@@ -233,7 +233,7 @@
       });
       checkButton.addEventListener("click", () => {
         inputs.forEach((input) => {
-          if (input.value == input.dataset.char) {
+          if (input.value.toUpperCase() == input.dataset.char) {
             input.classList.add("correct");
             input.classList.remove("incorrect");
           } else {
