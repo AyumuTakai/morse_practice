@@ -15,23 +15,19 @@
         background-color: aliceblue;
       }
       header {
-        position: fixed;
+        position: sticky;
         top: 0;
-        left: 0;
-        width: 100svw;
+        width: 100%;
         text-align: center;
         background-color: lightslategray;
         z-index: 1000;
-        height: 2.5rem;
+        min-height: 2.5rem;
       }
       h1 {
         margin: 0;
         padding: 0;
         color: white;
         font-size: 1.4rem;
-      }
-      body {
-        padding-top: 2.5rem;
       }
 
       #qcode-view {
@@ -138,9 +134,11 @@
       }
       header {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        padding: 0 1em;
+        gap: 0.2em 0.5em;
+        padding: 0.2em 1em;
       }
       header nav button {
         height: auto;
@@ -152,20 +150,42 @@
         color: white;
         cursor: pointer;
       }
-      #sound-bar {
+      #settings-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #settings-view .row {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 0.6em 1em;
-        padding: 0.4em 1em;
-        font-size: 0.9rem;
+        gap: 0.5em 1em;
+        padding: 0.8em 0;
+        border-bottom: 1px solid #d5dde6;
       }
-      #sound-bar button,
-      #sound-bar select {
+      #settings-view .row > label {
+        min-width: 6em;
+        font-weight: bold;
+      }
+      #settings-view select,
+      #settings-view button {
         height: auto;
-        font-size: 0.9rem;
-        padding: 0.2em 0.8em;
+        font-size: 1rem;
+        padding: 0.5em 1em;
         margin: 0;
+        border-radius: 0.6em;
+        border: 1px solid lightslategray;
+        background-color: white;
+        cursor: pointer;
+      }
+      #settings-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #settings-view .note {
+        font-size: 0.85rem;
+        color: #555;
+        flex-basis: 100%;
       }
       #qcode-view td.play {
         text-align: center;
@@ -174,20 +194,207 @@
         padding: 0.1em 0.6em;
         font-size: 0.9rem;
       }
-      #tree {
+      #listen-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #listen-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #listen-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #listen-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 1em;
+        text-align: center;
+      }
+      #listen-view .big {
+        font-size: 2.5rem;
+        margin: 0.3em 0;
+        min-height: 1.3em;
+      }
+      #listen-view .answer {
+        width: 4em;
+        height: auto;
+        font-size: 2rem;
+        padding: 0.2em;
+        border: 1px solid lightslategray;
+        border-radius: 0.5em;
+      }
+      #listen-view .answer.correct {
+        background-color: aquamarine;
+      }
+      #listen-view .answer.incorrect {
+        background-color: coral;
+      }
+      #listen-view .tree-wrap {
+        margin-top: 1em;
+      }
+      #listen-view .tree.readonly input {
+        cursor: default;
+        background-color: white;
+      }
+      #listen-view .tree.readonly .sym {
+        background-color: lightyellow;
+      }
+      #listen-view .tree input.hit {
+        outline: 3px solid #e67e22;
+        z-index: 2;
+      }
+      #listen-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      .tree-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tree {
+        --u: max(1svw, 8px); /* 1単位。画面が狭くても 8px を下回らない */
         position: relative;
-        width: 100svw;
-        height: 70svw;
+        width: calc(var(--u) * 100);
+        height: calc(var(--u) * 61);
       }
-      #tree input {
+      .tree input {
         position: absolute;
+        text-align: center;
+        height: calc(var(--u) * 3);
+        padding: 0;
+        margin: 0;
+        /* 16px 未満だと iOS が入力時に画面を拡大してしまう */
+        font-size: max(16px, calc(var(--u) * 2));
       }
-      #tree .sym {
+      .tree input.dot {
+        width: calc(var(--u) * 3);
+        border-radius: calc(var(--u) * 2);
+      }
+      .tree input.dash {
+        width: calc(var(--u) * 6);
+        border-radius: calc(var(--u) * 2);
+      }
+      .tree-lines {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .tree-lines line {
+        stroke: #8a9aa8;
+        stroke-width: 1.5;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .tree .sym {
         background-color: lightyellow;
       }
       header nav button.active {
         background: white;
         color: lightslategray;
+      }
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.1rem;
+        }
+        header nav button {
+          font-size: 0.8rem;
+          padding: 0.2em 0.6em;
+          margin-left: 0.2em;
+        }
+        #qcode-view {
+          padding: 0.5em;
+        }
+        #listen-view {
+          padding: 0.5em;
+        }
+        /* 下部の Reset / Show / Check */
+        .row-container.buttons {
+          height: auto;
+          padding: 1em 0;
+          gap: 0.5em;
+        }
+        .row-container.buttons button {
+          font-size: 1rem;
+          height: 3em;
+          width: auto;
+          flex: 1;
+          max-width: 8em;
+          margin: 0;
+        }
+        /* Q符号の一覧は表をやめてカード表示にする */
+        #qcode-view table,
+        #qcode-view tbody,
+        #qcode-view tr,
+        #qcode-view td {
+          display: block;
+        }
+        #qcode-view thead {
+          display: none;
+        }
+        #qcode-view tr {
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          gap: 0.2em 0.6em;
+          align-items: center;
+          background: white;
+          border: 1px solid #ccc;
+          border-radius: 0.6em;
+          padding: 0.4em 0.6em;
+          margin-bottom: 0.5em;
+        }
+        #qcode-view td {
+          border: 0;
+          padding: 0.1em 0;
+        }
+        #qcode-view td.code {
+          grid-column: 1;
+          font-size: 1.1rem;
+        }
+        #qcode-view td.morse {
+          grid-column: 2;
+          font-size: 0.9rem;
+        }
+        #qcode-view td.play {
+          grid-column: 3;
+          grid-row: 1;
+        }
+        #qcode-view td.meaning {
+          grid-column: 1 / 4;
+        }
+        #qcode-view td.exam {
+          grid-column: 1 / 4;
+          font-size: 0.8rem;
+          color: #555;
+        }
+        #qcode-view button,
+        #listen-view button {
+          padding: 0.5em 0.8em;
+        }
+        #qcode-view .choices button {
+          padding: 0.7em 0.8em;
+        }
+        #listen-view .big {
+          font-size: 2rem;
+        }
+      }
+      /* iPad mini など幅700px以上では、木を画面幅にちょうど収める */
+      @media (min-width: 700px) {
+        .tree {
+          --u: 1svw;
+        }
       }
     </style>
     <link rel="stylesheet" href="tree.css" />
@@ -198,27 +405,10 @@
       <nav>
         <button id="tab-alphabet" class="active">アルファベット</button>
         <button id="tab-qcode">Q符号</button>
+        <button id="tab-listen">聞き取り</button>
+        <button id="tab-settings">設定</button>
       </nav>
     </header>
-    <div id="sound-bar">
-      <span>🔊 速度</span>
-      <select id="wpm">
-        <option value="10">10</option>
-        <option value="15" selected>15</option>
-        <option value="20">20</option>
-        <option value="25">25</option>
-      </select>
-      <span>WPM  音程</span>
-      <select id="tone">
-        <option value="500">500</option>
-        <option value="600" selected>600</option>
-        <option value="700">700</option>
-        <option value="800">800</option>
-      </select>
-      <span>Hz</span>
-      <button id="sound-toggle" class="active">木のマスを選ぶと音が鳴る: ON</button>
-      <button id="sound-stop">停止</button>
-    </div>
     <script>
       // モールス音の再生(Web Audio)。ツ(-)=3単位、ト(.)=1単位、符号間=1、文字間=3、語間=7
       window.morseAudio = (() => {
@@ -266,10 +456,18 @@
         }
         return { play, stop };
       })();
-      document.getElementById("sound-stop").addEventListener("click", () => morseAudio.stop());
+      // 設定の保存(端末内のみ)
+      window.morseSettings = {
+        load() {
+          try { return JSON.parse(localStorage.getItem("morse-settings")) || {}; } catch (e) { return {}; }
+        },
+        save(patch) {
+          try { localStorage.setItem("morse-settings", JSON.stringify({ ...this.load(), ...patch })); } catch (e) {}
+        },
+      };
     </script>
     <div id="alphabet-view">
-      <div id="tree"></div>
+      <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree"></div></div>
       <script>
       // モールス符号の木を生成する。単位は svw(画面幅の1%)。
       // 行: 左は先頭の点の数、右は先頭の線の直後の点の数
@@ -292,6 +490,7 @@
         ["", "..--"], ["", "..--."], ["", "---."], ["", "----"],
       ];
       const STEP = 3.28; // 段の間隔(高さ3 + 隙間0.28)
+      const TOP_TRIM = 9; // 最上段の上の空白(単位)を詰める
       function treePlace(code) {
         const dashes = code.split("-").length - 1;
         const dots = code.length - dashes;
@@ -307,6 +506,7 @@
       }
       function buildTree(container) {
         const used = new Set();
+        const nodes = {}; // 符号 -> 中心座標(線を引くために記録)
         TREE_CODES.forEach(([ch, code, name]) => {
           const p = treePlace(code);
           // 今の見た目を維持するための例外: G と Q は同じ段に横並び、/ は D 行の3列目の底
@@ -326,12 +526,40 @@
           input.dataset.code = code;
           if (name) { input.classList.add("sym"); input.title = name; }
           const w = code.endsWith("-") ? 6 : 3;
-          input.style.left = `${(p.cx - w / 2).toFixed(2)}svw`;
-          input.style.top = `${(14 * (p.row + 1) - 3 - p.level * STEP).toFixed(2)}svw`;
+          input.style.left = `calc(var(--u) * ${(p.cx - w / 2).toFixed(2)})`;
+          input.style.top = `calc(var(--u) * ${(14 * (p.row + 1) - 3 - p.level * STEP - TOP_TRIM).toFixed(2)})`;
           container.appendChild(input);
+          nodes[code] = { x: p.cx, y: 14 * (p.row + 1) - 1.5 - p.level * STEP };
         });
+        drawTreeLines(container, nodes);
+      }
+      // 背面に SVG を敷いて、親子を線でつなぐ(入力欄の白い背景が線の端を隠す)
+      function drawTreeLines(container, nodes) {
+        const NS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(NS, "svg");
+        svg.setAttribute("viewBox", `0 ${TOP_TRIM} 100 ${70 - TOP_TRIM}`);
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.setAttribute("class", "tree-lines");
+        const root = { x: 50, y: 68.5 };
+        Object.entries(nodes).forEach(([code, n]) => {
+          // 親が木の中に無い符号(記号など)は線を引かない
+          const parent = code.slice(0, -1);
+          if (parent && !nodes[parent]) return;
+          const from = parent ? nodes[parent] : root;
+          const line = document.createElementNS(NS, "line");
+          line.setAttribute("x1", from.x);
+          line.setAttribute("y1", from.y);
+          line.setAttribute("x2", n.x);
+          line.setAttribute("y2", n.y);
+          svg.appendChild(line);
+        });
+        container.insertBefore(svg, container.firstChild);
       }
         buildTree(document.getElementById("tree"));
+        // 狭い画面では中央(E と T)が見えるようにスクロールしておく
+        const centerTree = (wrap) => (wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2);
+        centerTree(document.getElementById("tree-wrap"));
+        window.addEventListener("load", () => centerTree(document.getElementById("tree-wrap")));
       </script>
     <div class="row-container buttons" style="bottom: 0">
       <button style="bottom: 10%; right: 10%" id="reset">Reset</button>
@@ -339,7 +567,73 @@
       <button style="bottom: 10%; left: 20%" id="check">Check</button>
     </div>
     </div>
+    <div id="listen-view" hidden>
+      <div class="toolbar">
+        <button id="range-alpha" class="active">英字</button>
+        <button id="range-alnum">英字+数字</button>
+        <button id="range-all">すべて(記号を含む)</button>
+        <button id="listen-tree-toggle" class="active">木を見る: ON</button>
+      </div>
+      <div class="card">
+        <div class="note" id="listen-score"></div>
+        <div class="big" id="listen-result">♪</div>
+        <div id="listen-input-box"></div>
+        <div style="margin-top: 0.8em">
+          <button id="listen-replay">▶ 再生</button>
+          <button id="listen-answer">答える</button>
+          <button id="listen-giveup">わからない</button>
+          <button id="listen-next" hidden>次へ</button>
+        </div>
+        <div class="note" id="listen-missed"></div>
+      </div>
+      <div class="tree-wrap" id="listen-tree-wrap"><div class="tree readonly" id="listen-tree"></div></div>
+      <p class="note">
+        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度と音程は上のバーで変えられます。
+        大文字・小文字は区別しません。
+      </p>
+    </div>
+    <div id="settings-view" hidden>
+      <div class="row">
+        <label for="wpm">速度</label>
+        <select id="wpm">
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="15" selected>15</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+        </select>
+        <span>WPM</span>
+        <span class="note">1分間に送れる標準語(PARIS)の数。数字が小さいほどゆっくりです。</span>
+      </div>
+      <div class="row">
+        <label for="tone">音程</label>
+        <select id="tone">
+          <option value="500">500</option>
+          <option value="600" selected>600</option>
+          <option value="700">700</option>
+          <option value="800">800</option>
+        </select>
+        <span>Hz</span>
+      </div>
+      <div class="row">
+        <label>サウンド</label>
+        <button id="sound-toggle" class="active">ON</button>
+        <span class="note">アルファベットの木のマスを選ぶと、その符号の音が鳴ります。</span>
+      </div>
+      <div class="row">
+        <label>確認</label>
+        <button id="settings-play">▶ 再生(PARIS)</button>
+        <button id="sound-stop">停止</button>
+        <span class="note">いまの速度と音程で試し聴きできます。</span>
+      </div>
+    </div>
     <div id="qcode-view" hidden>
+      <div class="toolbar">
+        <button id="qtab-list" class="active">一覧</button>
+        <button id="qtab-quiz">クイズ</button>
+      </div>
 <!-- 一覧 -->
       <section id="list-view">
         <div class="toolbar">
@@ -675,17 +969,174 @@
           if (item) morseAudio.play(item.morse);
         });
 
+        // 一覧とクイズの切り替え
+        const showQ = (name) => {
+          $("list-view").hidden = name !== "list";
+          $("quiz-view").hidden = name !== "quiz";
+          $("qtab-list").classList.toggle("active", name === "list");
+          $("qtab-quiz").classList.toggle("active", name === "quiz");
+          if (name === "quiz" && !quiz.queue.length) startQuiz();
+        };
+        $("qtab-list").addEventListener("click", () => showQ("list"));
+        $("qtab-quiz").addEventListener("click", () => showQ("quiz"));
         window.qcodeInit = () => { if (!quiz.queue.length) startQuiz(); };
   })();
     </script>
     <script>
-      let treeSound = true;
+      // 聞き取り練習: ランダムな文字のモールス音を聞いて入力する
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const RANGES = {
+          alpha: (ch) => /^[A-Z]$/.test(ch),
+          alnum: (ch) => /^[A-Z0-9]$/.test(ch),
+          all: () => true,
+        };
+        let tree = null;
+        const st = { range: "alpha", current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null };
+
+        const pool = () => TREE_CODES.filter(([ch]) => ch !== "" && RANGES[st.range](ch));
+
+        function ensureInput() {
+          if (st.input) return;
+          // ページ全体の input を一括操作する既存の処理に巻き込まれないよう、開いたときに作る
+          const el = document.createElement("input");
+          el.type = "text";
+          el.className = "answer";
+          el.maxLength = 1;
+          el.autocomplete = "off";
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") (st.done ? next : submit)();
+          });
+          $("listen-input-box").appendChild(el);
+          st.input = el;
+        }
+
+        function score() {
+          $("listen-score").textContent = `正解 ${st.correct} / ${st.total}`;
+          $("listen-missed").textContent = st.missed.size ? "間違えた文字: " + [...st.missed].join(" ") : "";
+        }
+
+        // 参考用の木(文字入り・読み取り専用)。ページ全体の input 一括操作に巻き込まれないよう、開いたときに作る
+        function ensureTree() {
+          if (tree) return;
+          tree = $("listen-tree");
+          buildTree(tree);
+          tree.querySelectorAll("input").forEach((el) => {
+            el.value = el.dataset.char;
+            el.readOnly = true;
+            el.tabIndex = -1;
+          });
+        }
+        const wrap = () => $("listen-tree-wrap");
+        const mark = (ch) => {
+          tree.querySelectorAll("input").forEach((el) => {
+            const hit = ch !== null && el.dataset.char === ch;
+            el.classList.toggle("hit", hit);
+            // 答えのマスが画面外なら横スクロールで見える位置へ
+            if (hit) wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+          });
+        };
+
+        function next() {
+          ensureInput();
+          ensureTree();
+          mark(null);
+          const choices = pool().filter(([ch]) => ch !== st.last);
+          st.current = choices[Math.floor(Math.random() * choices.length)];
+          st.last = st.current[0];
+          st.done = false;
+          st.input.value = "";
+          st.input.classList.remove("correct", "incorrect");
+          $("listen-result").textContent = "♪";
+          $("listen-next").hidden = true;
+          $("listen-answer").hidden = false;
+          $("listen-giveup").hidden = false;
+          score();
+          st.input.focus();
+        }
+
+        function finish(isCorrect, given) {
+          const [ch, code] = st.current;
+          st.done = true;
+          st.total++;
+          if (isCorrect) st.correct++;
+          else st.missed.add(ch);
+          st.input.classList.add(isCorrect ? "correct" : "incorrect");
+          mark(ch);
+          const dd = code.replace(/\./g, "・").replace(/-/g, "－");
+          $("listen-result").textContent = (isCorrect ? "正解! " : given ? "不正解… " : "") + `${ch}  ${dd}`;
+          $("listen-answer").hidden = true;
+          $("listen-giveup").hidden = true;
+          $("listen-next").hidden = false;
+          $("listen-next").focus();
+          score();
+        }
+
+        function submit() {
+          const given = st.input.value.trim();
+          if (!given || st.done) return;
+          finish(given.toUpperCase() === st.current[0], given);
+        }
+
+        $("listen-answer").addEventListener("click", submit);
+        $("listen-giveup").addEventListener("click", () => !st.done && finish(false, ""));
+        $("listen-next").addEventListener("click", next);
+        $("listen-replay").addEventListener("click", () => {
+          if (st.current) morseAudio.play(st.current[1]);
+          if (st.input && !st.done) st.input.focus();
+        });
+        ["alpha", "alnum", "all"].forEach((r) =>
+          $("range-" + r).addEventListener("click", () => {
+            st.range = r;
+            ["alpha", "alnum", "all"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
+            st.total = 0;
+            st.correct = 0;
+            st.missed.clear();
+            next();
+          })
+        );
+        $("listen-tree-toggle").addEventListener("click", (e) => {
+          const hide = !wrap().hidden;
+          wrap().hidden = hide;
+          e.target.textContent = "木を見る: " + (hide ? "OFF" : "ON");
+          e.target.classList.toggle("active", !hide);
+        });
+        window.listenInit = () => {
+          ensureInput();
+          if (!st.current) next();
+          else st.input.focus();
+          if (!st.centered) {
+            wrap().scrollLeft = (wrap().scrollWidth - wrap().clientWidth) / 2;
+            st.centered = true;
+          }
+        };
+      })();
+    </script>
+    <script>
+      const saved = morseSettings.load();
+      const wpmSelect = document.getElementById("wpm");
+      const toneSelect = document.getElementById("tone");
+      if (saved.wpm) wpmSelect.value = saved.wpm;
+      if (saved.tone) toneSelect.value = saved.tone;
+      wpmSelect.addEventListener("change", () => morseSettings.save({ wpm: wpmSelect.value }));
+      toneSelect.addEventListener("change", () => morseSettings.save({ tone: toneSelect.value }));
+      let treeSound = saved.sound !== false;
       const soundToggle = document.getElementById("sound-toggle");
+      const showSound = () => {
+        soundToggle.textContent = treeSound ? "ON" : "OFF";
+        soundToggle.classList.toggle("active", treeSound);
+      };
+      showSound();
       soundToggle.addEventListener("click", () => {
         treeSound = !treeSound;
-        soundToggle.textContent = "木のマスを選ぶと音が鳴る: " + (treeSound ? "ON" : "OFF");
-        soundToggle.classList.toggle("active", treeSound);
+        showSound();
+        morseSettings.save({ sound: treeSound });
       });
+      // 設定の確認用(PARIS を再生)
+      document.getElementById("settings-play").addEventListener("click", () =>
+        morseAudio.play("・－－・ ・－ ・－・ ・・ ・・・")
+      );
+      document.getElementById("sound-stop").addEventListener("click", () => morseAudio.stop());
       document.getElementById("tree").addEventListener("focusin", (e) => {
         const code = e.target.dataset && e.target.dataset.code;
         if (treeSound && code && e.target.dataset.char !== "") morseAudio.play(code);
@@ -693,6 +1144,8 @@
       const tabs = {
         alphabet: ["tab-alphabet", "alphabet-view"],
         qcode: ["tab-qcode", "qcode-view"],
+        listen: ["tab-listen", "listen-view"],
+        settings: ["tab-settings", "settings-view"],
       };
       Object.entries(tabs).forEach(([name, [tabId]]) => {
         document.getElementById(tabId).addEventListener("click", () => {
@@ -701,6 +1154,8 @@
             document.getElementById(v).hidden = n !== name;
           });
           if (name === "qcode") qcodeInit();
+          if (name === "listen") listenInit();
+          if (name !== "listen") morseAudio.stop();
         });
       });
     </script>
