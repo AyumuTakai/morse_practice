@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,13 +22,172 @@
         text-align: center;
         background-color: lightslategray;
         z-index: 1000;
-        height: 3svh;
+        height: 2.5rem;
       }
       h1 {
         margin: 0;
         padding: 0;
         color: white;
-        font-size: 3svw;
+        font-size: 1.4rem;
+      }
+      body {
+        padding-top: 2.5rem;
+      }
+
+      #qcode-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #qcode-view .tabs {
+        display: flex;
+        gap: 0.5em;
+        margin-bottom: 1em;
+      }
+      #qcode-view button {
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #qcode-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #qcode-view .note {
+        font-size: 0.8rem;
+        color: #555;
+      }
+      #qcode-view table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+      }
+      #qcode-view th,
+      #qcode-view td {
+        border: 1px solid #ccc;
+        padding: 0.5em;
+        text-align: left;
+        vertical-align: top;
+      }
+      #qcode-view td.code {
+        font-weight: bold;
+        font-family: monospace;
+        white-space: nowrap;
+      }
+      #qcode-view td.hidden-cell {
+        color: transparent;
+        background: #eee;
+        cursor: pointer;
+        user-select: none;
+      }
+      #qcode-view .toolbar {
+        display: flex;
+        gap: 0.5em;
+        flex-wrap: wrap;
+        margin-bottom: 1em;
+      }
+      #qcode-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 1em;
+      }
+      #qcode-view .prompt {
+        font-size: 1.4rem;
+        margin: 0.5em 0 1em;
+      }
+      #qcode-view .choices {
+        display: grid;
+        gap: 0.5em;
+      }
+      #qcode-view .choices button {
+        border-radius: 0.8em;
+        text-align: left;
+        background: white;
+      }
+      #qcode-view .choices button.correct {
+        background-color: aquamarine;
+      }
+      #qcode-view .choices button.incorrect {
+        background-color: coral;
+      }
+      #qcode-view .detail {
+        margin-top: 1em;
+        font-size: 0.95rem;
+        min-height: 4em;
+      }
+      #qcode-view .score {
+        float: right;
+        font-size: 0.9rem;
+      }
+
+      #qcode-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0;
+      }
+      #qcode-view {
+        padding-top: 1em;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1em;
+      }
+      header nav button {
+        height: auto;
+        font-size: 0.9rem;
+        padding: 0.1em 1em;
+        margin-left: 0.3em;
+        border: 1px solid white;
+        background: transparent;
+        color: white;
+        cursor: pointer;
+      }
+      #sound-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6em 1em;
+        padding: 0.4em 1em;
+        font-size: 0.9rem;
+      }
+      #sound-bar button,
+      #sound-bar select {
+        height: auto;
+        font-size: 0.9rem;
+        padding: 0.2em 0.8em;
+        margin: 0;
+      }
+      #qcode-view td.play {
+        text-align: center;
+      }
+      #qcode-view td.play button {
+        padding: 0.1em 0.6em;
+        font-size: 0.9rem;
+      }
+      #tree {
+        position: relative;
+        width: 100svw;
+        height: 70svw;
+      }
+      #tree input {
+        position: absolute;
+      }
+      #tree .sym {
+        background-color: lightyellow;
+      }
+      header nav button.active {
+        background: white;
+        color: lightslategray;
       }
     </style>
     <link rel="stylesheet" href="tree.css" />
@@ -36,190 +195,196 @@
   <body>
     <header>
       <h1>Morse Code Practice</h1>
+      <nav>
+        <button id="tab-alphabet" class="active">アルファベット</button>
+        <button id="tab-qcode">Q符号</button>
+      </nav>
     </header>
-    <main>
-      <!-- 5の行 -->
-      <div class="row-container left-side">
-        <div class="col">
-          <!-- ..... -->
-          <input type="text" class="dot" data-char="5" />
-        </div>
-      </div>
-      <!-- 6の行 -->
-      <div class="row-container right-side">
-        <div class="col">
-          <!-- ..... -->
-          <input type="text" class="dot" data-char="6" />
-        </div>
-      </div>
-      <div class="row-container left-side">
-        <!-- Hの行 -->
-        <div class="col">
-          <!-- .... -->
-          <input type="text" class="dot" data-char="H" />
-        </div>
-        <div class="col">
-          <!-- ....- -->
-          <input type="text" class="dash" data-char="4" />
-        </div>
-      </div>
-      <div class="row-container right-side">
-        <!-- Bの行 -->
-        <div class="col">
-          <!-- .... -->
-          <input type="text" class="dot" data-char="B" />
-        </div>
-        <div class="col">
-          <!-- ....- -->
-          <input type="text" class="dash" data-char="=" />
-        </div>
-      </div>
-
-      <div class="row-container left-side">
-        <!-- Sの行 -->
-        <div class="col">
-          <!-- ... -->
-          <input type="text" class="dot" data-char="S" />
-        </div>
-        <div class="col">
-          <!-- ...ー -->
-          <input type="text" class="dash" data-char="V" />
-        </div>
-        <div class="col">
-          <!-- ...ーー -->
-          <input type="text" class="dash" data-char="3" />
-        </div>
-      </div>
-      <div class="row-container right-side">
-        <!-- Dの行 -->
-        <div class="col">
-          <!-- ... -->
-          <input type="text" class="dot" data-char="D" />
-        </div>
-        <div class="col">
-          <!-- ...ー -->
-          <input type="text" class="dash" data-char="X" />
-        </div>
-        <div class="col">
-          <!-- ...ーー -->
-          <input type="text" class="dot" data-char="/" />
-        </div>
-      </div>
-      <div class="row-container left-side">
-        <!-- Iの行 -->
-        <div class="col">
-          <!-- .. -->
-          <input type="text" class="dot" data-char="I" />
-        </div>
-        <div class="col">
-          <!-- ..- -->
-          <input type="text" class="dash" data-char="U" />
-          <!-- ..-. -->
-          <input type="text" class="dot" data-char="F" />
-        </div>
-        <div class="col">
-          <!-- ..-- -->
-          <input type="text" class="dash" data-char="" />
-          <!-- ..--. -->
-          <input type="text" class="dot" data-char="" />
-          <!-- ..--.. -->
-          <input type="text" class="dot" data-char="?" />
-        </div>
-        <div class="col">
-          <!-- ..--- -->
-          <input type="text" class="dash" data-char="2" />
-        </div>
-      </div>
-
-      <div class="row-container right-side">
-        <!-- Nの行 -->
-        <div class="col">
-          <!-- .. -->
-          <input type="text" class="dot" data-char="N" />
-        </div>
-        <div class="col">
-          <!-- -.- -->
-          <input type="text" class="dash" data-char="K" />
-          <!-- -.-. -->
-          <input type="text" class="dot" data-char="C" />
-        </div>
-        <div class="col">
-          <!-- ..-- -->
-          <input type="text" class="dash" data-char="Y" />
-        </div>
-      </div>
-
-      <!-- Eの行 -->
-      <div class="row-container left-side">
-        <div class="col">
-          <!-- . -->
-          <input type="text" class="dot" data-char="E" />
-        </div>
-        <div class="col">
-          <!-- .- -->
-          <input type="text" class="dash" data-char="A" />
-          <!-- .-. -->
-          <input type="text" class="dot" data-char="R" />
-          <!-- .-.. -->
-          <input type="text" class="dot" data-char="L" />
-        </div>
-        <div class="col">
-          <!-- .-- -->
-          <input type="text" class="dash" data-char="W" />
-          <!-- .--. -->
-          <input type="text" class="dot" data-char="P" />
-        </div>
-        <div class="col">
-          <!-- .--- -->
-          <input type="text" class="dash" data-char="J" />
-        </div>
-        <div class="col">
-          <!-- .---- -->
-          <input type="text" class="dash" data-char="1" />
-        </div>
-      </div>
-
-      <div class="row-container right-side">
-        <!-- Tの行 -->
-        <div class="col">
-          <!-- - -->
-          <input type="text" class="dash" data-char="T" />
-        </div>
-        <div class="col">
-          <!-- - -->
-          <input type="text" class="dash" data-char="M" />
-          <div>
-            <input type="text" class="dot" data-char="G" />
-            <input type="text" class="dash" data-char="Q" />
-          </div>
-          <div>
-            <input type="text" class="dot" data-char="Z" />
-          </div>
-          <div>
-            <input type="text" class="dot" data-char="7" />
-          </div>
-        </div>
-        <div class="col">
-          <!-- - -->
-          <input type="text" class="dash" data-char="O" />
-          <input type="text" class="dot" data-char="" />
-          <input type="text" class="dot" data-char="8" />
-        </div>
-        <div class="col">
-          <!-- - -->
-          <input type="text" class="dash" data-char="" />
-          <input type="text" class="dot" data-char="9" />
-        </div>
-        <div class="col">
-          <!-- - -->
-          <input type="text" class="dash" data-char="0" />
-        </div>
-      </div>
-    </main>
+    <div id="sound-bar">
+      <span>🔊 速度</span>
+      <select id="wpm">
+        <option value="10">10</option>
+        <option value="15" selected>15</option>
+        <option value="20">20</option>
+        <option value="25">25</option>
+      </select>
+      <span>WPM  音程</span>
+      <select id="tone">
+        <option value="500">500</option>
+        <option value="600" selected>600</option>
+        <option value="700">700</option>
+        <option value="800">800</option>
+      </select>
+      <span>Hz</span>
+      <button id="sound-toggle" class="active">木のマスを選ぶと音が鳴る: ON</button>
+      <button id="sound-stop">停止</button>
+    </div>
+    <script>
+      // モールス音の再生(Web Audio)。ツ(-)=3単位、ト(.)=1単位、符号間=1、文字間=3、語間=7
+      window.morseAudio = (() => {
+        let ctx = null;
+        let osc = null;
+        const stop = () => {
+          if (osc) {
+            try { osc.stop(); } catch (e) {}
+            osc = null;
+          }
+        };
+        function play(code) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          ctx = ctx || new Ctx();
+          if (ctx.state === "suspended") ctx.resume();
+          stop();
+          const unit = 1.2 / Number(document.getElementById("wpm").value);
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.frequency.value = Number(document.getElementById("tone").value);
+          g.gain.value = 0;
+          o.connect(g).connect(ctx.destination);
+          let t = ctx.currentTime + 0.05;
+          const ramp = 0.005; // クリック音を避けるための立ち上がり/立ち下がり
+          const on = (len) => {
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(0.3, t + ramp);
+            g.gain.setValueAtTime(0.3, t + len - ramp);
+            g.gain.linearRampToValueAtTime(0, t + len);
+            t += len;
+          };
+          const symbols = [...code.replace(/・/g, ".").replace(/－/g, "-")];
+          symbols.forEach((s, i) => {
+            if (s === ".") on(unit);
+            else if (s === "-") on(unit * 3);
+            else if (s === " ") { t += unit * 2; return; } // 直前の符号間1単位と合わせて文字間3単位
+            const next = symbols[i + 1];
+            if (next === "." || next === "-") t += unit;
+            else if (next === " ") t += unit;
+          });
+          o.start();
+          o.stop(t + 0.05);
+          osc = o;
+        }
+        return { play, stop };
+      })();
+      document.getElementById("sound-stop").addEventListener("click", () => morseAudio.stop());
+    </script>
+    <div id="alphabet-view">
+      <div id="tree"></div>
+      <script>
+      // モールス符号の木を生成する。単位は svw(画面幅の1%)。
+      // 行: 左は先頭の点の数、右は先頭の線の直後の点の数
+      // 列: 線の数(左は +1)  段: 行の接頭辞より後ろにある点の数
+      const TREE_CODES = [
+        ["E", "."], ["T", "-"], ["I", ".."], ["A", ".-"], ["N", "-."], ["M", "--"],
+        ["S", "..."], ["U", "..-"], ["R", ".-."], ["W", ".--"], ["D", "-.."], ["K", "-.-"],
+        ["G", "--."], ["O", "---"], ["H", "...."], ["V", "...-"], ["F", "..-."], ["L", ".-.."],
+        ["P", ".--."], ["J", ".---"], ["B", "-..."], ["X", "-..-"], ["C", "-.-."], ["Y", "-.--"],
+        ["Z", "--.."], ["Q", "--.-"],
+        ["5", "....."], ["4", "....-"], ["3", "...--"], ["2", "..---"], ["1", ".----"],
+        ["6", "-...."], ["7", "--..."], ["8", "---.."], ["9", "----."], ["0", "-----"],
+        ["?", "..--.."], ["/", "-..-."], ["=", "-...-"],
+        // 別表第1号 欧文の記号(× は X と同じ符号のため省略)
+        [".", ".-.-.-", "終点"], [",", "--..--", "小読点"], [":", "---...", "重点・除法"],
+        ["'", ".----.", "略符"], ["-", "-....-", "連続線・横線・減算"], ["(", "-.--.", "左括弧"],
+        [")", "-.--.-", "右括弧"], ["+", ".-.-.", "十字符・加算"], ['"', ".-..-.", "引用符"],
+        ["@", ".--.-.", "単価記号"],
+        // 1アマの範囲外で空欄のままにしてある位置
+        ["", "..--"], ["", "..--."], ["", "---."], ["", "----"],
+      ];
+      const STEP = 3.28; // 段の間隔(高さ3 + 隙間0.28)
+      function treePlace(code) {
+        const dashes = code.split("-").length - 1;
+        const dots = code.length - dashes;
+        let row, col, level, cx;
+        if (code[0] === ".") {
+          const a = code.match(/^\.+/)[0].length;
+          row = 5 - a; col = dashes + 1; level = dots - a; cx = 55 - 10 * col;
+        } else {
+          const r = code.slice(1).match(/^\.*/)[0].length;
+          row = 4 - r; col = dashes; level = dots - r; cx = 45 + 10 * col;
+        }
+        return { row, col, level, cx, side: code[0] };
+      }
+      function buildTree(container) {
+        const used = new Set();
+        TREE_CODES.forEach(([ch, code, name]) => {
+          const p = treePlace(code);
+          // 今の見た目を維持するための例外: G と Q は同じ段に横並び、/ は D 行の3列目の底
+          let free = true;
+          if (code === "--.") p.cx -= 3;
+          if (code === "--.-") { p.cx = 66.5; p.level = 1; free = false; }
+          if (code === "-..-.") { p.col = 3; p.cx = 75; p.level = 0; }
+          const key = () => `${p.side}${p.row}:${p.col}:${p.level}`;
+          if (free) {
+            while (used.has(key())) p.level++; // 重なる場合は一段上へ
+            used.add(key());
+          }
+          const input = document.createElement("input");
+          input.type = "text";
+          input.className = code.endsWith("-") ? "dash" : "dot";
+          input.dataset.char = ch;
+          input.dataset.code = code;
+          if (name) { input.classList.add("sym"); input.title = name; }
+          const w = code.endsWith("-") ? 6 : 3;
+          input.style.left = `${(p.cx - w / 2).toFixed(2)}svw`;
+          input.style.top = `${(14 * (p.row + 1) - 3 - p.level * STEP).toFixed(2)}svw`;
+          container.appendChild(input);
+        });
+      }
+        buildTree(document.getElementById("tree"));
+      </script>
     <div class="row-container buttons" style="bottom: 0">
       <button style="bottom: 10%; right: 10%" id="reset">Reset</button>
       <button style="bottom: 10%; left: 10%" id="show">Show</button>
       <button style="bottom: 10%; left: 20%" id="check">Check</button>
+    </div>
+    </div>
+    <div id="qcode-view" hidden>
+<!-- 一覧 -->
+      <section id="list-view">
+        <div class="toolbar">
+          <button id="hide-meaning">意味を隠す</button>
+          <button id="hide-code">符号を隠す</button>
+          <button id="hide-morse">モールスを隠す</button>
+          <button id="show-all">すべて表示</button>
+        </div>
+        <p class="note">隠したセルはクリックで表示できます。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>符号</th>
+              <th>モールス</th>
+              <th>意味(過去問・運用規則の表記)</th>
+              <th>過去問・出典</th>
+              <th>音</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </section>
+
+      <!-- クイズ -->
+      <section id="quiz-view" hidden>
+        <div class="toolbar">
+          <button id="mode-code" class="active">符号 → 意味</button>
+          <button id="mode-meaning">意味 → 符号</button>
+          <button id="mode-morse">意味 → モールス(試験形式)</button>
+          <button id="mode-sound">音 → 符号</button>
+          <button id="scope">範囲: 過去問に出たもの</button>
+          <button id="restart">最初から</button>
+          <button id="retry-missed">間違えた問題だけ</button>
+        </div>
+        <div class="card">
+          <span class="score" id="score"></span>
+          <div class="prompt" id="prompt"></div>
+          <button id="replay" hidden>▶ もう一度聞く</button>
+          <div class="choices" id="choices"></div>
+          <div class="detail" id="detail"></div>
+          <button id="next" hidden>次へ</button>
+        </div>
+      </section>
+      <p class="note">※ ★は法規の過去問(令和6年12月期〜令和8年8月期)で出題された項目で、意味はその表記に合わせています。
+        ★のない項目の意味は、無線局運用規則 別表第2号(e-Gov)の原文に合わせています。</p>
     </div>
     <script>
       const inputs = document.querySelectorAll("input");
@@ -233,7 +398,7 @@
       });
       checkButton.addEventListener("click", () => {
         inputs.forEach((input) => {
-          if (input.value.toUpperCase() == input.dataset.char) {
+          if (input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt) {
             input.classList.add("correct");
             input.classList.remove("incorrect");
           } else {
@@ -251,6 +416,293 @@
       //   inputs.forEach((input) => {
       //     input.value = input.dataset.char;
       //   });
+    </script>
+    <script>
+      (() => {
+        // c: 符号 / m: 意味 / g: 分類 / x: 出題された過去問 / mo: モールス(省略時は文字から生成)
+        const R = { a: "R6.12", b: "R7.5", c: "R7.11", d: "R8.5", e: "R8.8" };
+        const QCODES = [
+          // ---- 過去問に出た項目(意味は問題文の表記)----
+          { c: "QRK5", g: "Q符号", m: "そちらの信号の明りょう度は、非常に良いです。", x: [R.a + " A-15"], num: true },
+          { c: "QSA4", g: "Q符号", m: "そちらの信号の強さは、強いです。", x: [R.b + " A-16"], num: true },
+          { c: "QRM4", g: "Q符号", m: "そちらの伝送は、強い混信を受けています。", x: [R.c + " A-14"], num: true },
+          { c: "QSB", g: "Q符号", m: "そちらの信号には、フェージングがあります。", x: [R.d + " A-15"] },
+          { c: "QSY", g: "Q符号", m: "他の周波数(又は…kHz(若しくはMHz))に変更して伝送してください。", x: [R.c + " A-15", R.e + " A-11"] },
+          { c: "QRS?", g: "Q符号", m: "こちらは、もっとおそく送信しましょうか。(Q符号+問符)", x: [R.a + " A-16", R.e + " A-14"] },
+          { c: "QTH", g: "Q符号", m: "こちらの位置は、緯度…、経度…(又は他の表示による。)です。", x: [R.e + " A-15"] },
+          { c: "QRU", g: "Q符号", m: "こちらは、そちらへ伝送するものはありません。", x: [R.e + " A-16"] },
+          { c: "QSU", g: "Q符号", m: "その周波数(又は…kHz(若しくはMHz))で(種別…の発射で)送信又は応答してください。", x: [R.e + " A-11"] },
+          { c: "QSW", g: "Q符号", m: "こちらは、この周波数(又は…kHz(若しくはMHz))で(種別…の発射で)送信しましょう。(問いは「送信してくれませんか。」)", x: [R.e + " A-11"] },
+          { c: "VA", g: "略符号", m: "通信の完了符号(通信が終了したとき)", x: [R.a + " A-13", R.d + " A-13"], mo: "・・・－・－" },
+          { c: "K", g: "略符号", m: "送信してください。(応答で直ちに通報を受信しようとするとき/NIL の次)", x: [R.b + " A-13", R.c + " A-13", R.e + " A-13"] },
+          { c: "AS", g: "略符号", m: "送信の待機を要求する符号(直ちに通報を受信できない事由があるとき。待つべき時間を続けて送信)", x: [R.b + " A-13", R.e + " A-13"], mo: "・－・・・" },
+          { c: "BT", g: "略符号", m: "同一の伝送の異なる部分を分離する符号", x: [R.b + " A-15"], mo: "－・・・－" },
+          { c: "RPT", g: "略符号", m: "反復してください(又はこちらは、反復します。)(通報の反復を求めるとき、次に反復箇所を示す)", x: [R.b + " A-14", R.d + " A-16"] },
+          { c: "NIL", g: "略符号", m: "こちらは、そちらに送信するものがありません。(通報の送信終了時、続けて K)", x: [R.c + " A-13"] },
+          { c: "訂正符号", g: "略符号", m: "欧文通信及び自動機通信の訂正符号(誤送時。8連点=EEEEEEEE を1符号として送信)", x: [R.c + " A-16"], mo: "・・・・・・・・" },
+          { c: "EXZ", g: "略符号", m: "欧文の非常通報の前置符号(和文は「ヒゼウ」)", x: [R.a + " A-14"] },
+          { c: "OSO", g: "略符号", m: "非常符号(連絡設定の呼出し・応答に3回前置)", x: [R.d + " A-14"], mo: "－－－・・・－－－" },
+          { c: "AR", g: "略符号", m: "送信の終了符号", x: [R.a + " A-13(誤り選択肢)"], mo: "・－・－・" },
+          { c: "DE", g: "略符号", m: "……から(呼出局の呼出符号又は他の識別表示に前置して使用する。)", x: [R.b + " A-13(本文)"] },
+          // ---- 過去問に未出題(意味は無線局運用規則 別表第2号の原文)----
+          { c: "QRA", g: "Q符号", m: "当局名は、……です。" },
+          { c: "QRB", g: "Q符号", m: "貴局と当局との間の距離は、およそ……海里(又はキロメートル)です。" },
+          { c: "QRG", g: "Q符号", m: "そちら(又は……)の正確な周波数は、……kHz(又はMHz)です。" },
+          { c: "QRH", g: "Q符号", m: "そちらの周波数は、変化します。" },
+          { c: "QRI", g: "Q符号", m: "そちらの発射の音調は、1良い 2変化する 3悪い です。" },
+          { c: "QRK", g: "Q符号", m: "そちらの信号の明りょう度は、1悪い 2かなり悪い 3かなり良い 4良い 5非常に良い です。" },
+          { c: "QRL", g: "Q符号", m: "こちらは、通信中です。妨害しないでください。" },
+          { c: "QRM", g: "Q符号", m: "そちらの伝送は、1混信なし 2少し 3かなり 4強い 5非常に強い 混信を受けています。" },
+          { c: "QRN", g: "Q符号", m: "こちらは、1空電なし 2少し 3かなり 4強い 5非常に強い 空電に妨げられています。" },
+          { c: "QRO", g: "Q符号", m: "送信機の電力を増加してください。" },
+          { c: "QRP", g: "Q符号", m: "送信機の電力を減少してください。" },
+          { c: "QRQ", g: "Q符号", m: "もっと速く送信してください。" },
+          { c: "QRS", g: "Q符号", m: "もっとおそく送信してください。" },
+          { c: "QRT", g: "Q符号", m: "送信を中止してください。" },
+          { c: "QRV", g: "Q符号", m: "こちらは、用意ができました。" },
+          { c: "QRX", g: "Q符号", m: "こちらは、……時に再びそちらを呼びます。" },
+          { c: "QRY", g: "Q符号", m: "そちらの順位は、……番です。" },
+          { c: "QRZ", g: "Q符号", m: "そちらは、……から呼ばれています。" },
+          { c: "QSA", g: "Q符号", m: "そちらの信号の強さは、1ほとんど感じない 2弱い 3かなり強い 4強い 5非常に強い です。" },
+          { c: "QSD", g: "Q符号", m: "そちらの信号は、切れます。" },
+          { c: "QSL", g: "Q符号", m: "こちらは、受信証を送ります。" },
+          { c: "QSM", g: "Q符号", m: "そちらがこちらに送信した最後の電報を反復してください。" },
+          { c: "QSN", g: "Q符号", m: "こちらは、そちらを……kHz(又はMHz)で聞きました。" },
+          { c: "QSO", g: "Q符号", m: "こちらは、……と直接(又は中継で)通信することができます。" },
+          { c: "QSP", g: "Q符号", m: "こちらは、無料で……へ中継しましょう。" },
+          { c: "QSS", g: "Q符号", m: "こちらは、……kHz(又はMHz)の通信周波数を使用します。" },
+          { c: "QSV", g: "Q符号", m: "調整のために、その周波数でV(又は符号)の連続を送信してください。" },
+          { c: "QSX", g: "Q符号", m: "こちらは、……を……kHz(又はMHz)で聴取しています。" },
+          { c: "QSZ", g: "Q符号", m: "各語又は各集合を2回(又は……回)送信してください。" },
+          { c: "QTA", g: "Q符号", m: "第……号電報(又は通報)を取り消してください。" },
+          { c: "QTB", g: "Q符号", m: "こちらは、そちらの語数計算に同意しません。" },
+          { c: "QTC", g: "Q符号", m: "こちらには、そちらへの電報が……通あります。" },
+          { c: "QTE", g: "Q符号", m: "こちらからのそちらの真方位は、……度でした。" },
+          { c: "QTR", g: "Q符号", m: "正確な時刻は、……時です。" },
+          { c: "CQ", g: "略符号", m: "各局あて一般呼出し" },
+          { c: "R", g: "略符号", m: "受信しました。" },
+          { c: "TU", g: "略符号", m: "ありがとう。" },
+          { c: "OK", g: "略符号", m: "こちらは、同意します(又はよろしい。)。" },
+          { c: "PSE", g: "略符号", m: "どうぞ(※を付した略符号)" },
+          { c: "BK", g: "略符号", m: "送信の中断を要求する符号" },
+          { c: "VVV", g: "略符号", m: "調整符号" },
+          { c: "EX", g: "略符号", m: "機器の調整又は実験のため調整符号を発射するときに使用する。" },
+          { c: "CFM", g: "略符号", m: "確認してください(又はこちらは、確認します。)。" },
+          { c: "SOS", g: "略符号", m: "遭難信号", mo: "・・・－－－・・・" },
+        ];
+
+        const $ = (id) => document.getElementById(id);
+        const MORSE = {
+          A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.",
+          H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--", N: "-.",
+          O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-",
+          V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--..",
+          0: "-----", 1: ".----", 2: "..---", 3: "...--", 4: "....-",
+          5: ".....", 6: "-....", 7: "--...", 8: "---..", 9: "----.",
+          "?": "..--..",
+        };
+        const dotDash = (s) => s.replace(/\./g, "・").replace(/-/g, "－");
+        // 試験の表記に合わせ、文字ごとに空白で区切る(例: ・－－・ ・－・ ・)
+        const toMorse = (code) => [...code].map((ch) => dotDash(MORSE[ch])).join(" ");
+        QCODES.forEach((item) => (item.morse = item.mo || toMorse(item.c)));
+
+        // ---- 一覧 ----
+        const listBody = $("list-body");
+        QCODES.forEach((item) => {
+          const tr = document.createElement("tr");
+          [
+            ["code", item.c],
+            ["morse", item.morse],
+            ["meaning", item.m],
+            ["exam", item.x ? "★ " + item.x.join(", ") : "別表第2号"],
+          ].forEach(([kind, text]) => {
+            const td = document.createElement("td");
+            td.textContent = text;
+            td.classList.add(kind);
+            tr.appendChild(td);
+          });
+          const play = document.createElement("td");
+          play.classList.add("play");
+          const btn = document.createElement("button");
+          btn.textContent = "▶";
+          btn.addEventListener("click", () => morseAudio.play(item.morse));
+          play.appendChild(btn);
+          tr.appendChild(play);
+          listBody.appendChild(tr);
+        });
+        listBody.addEventListener("click", (e) => {
+          if (e.target.tagName === "TD") e.target.classList.remove("hidden-cell");
+        });
+        const setHidden = (selector, hidden) =>
+          listBody
+            .querySelectorAll(selector)
+            .forEach((td) => td.classList.toggle("hidden-cell", hidden));
+        $("hide-meaning").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.meaning", true);
+        });
+        $("hide-code").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.code", true);
+        });
+        $("hide-morse").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.morse", true);
+        });
+        $("show-all").addEventListener("click", () => setHidden("td:not(.play)", false));
+
+        // ---- クイズ ----
+        const quiz = { mode: "code", examOnly: true, queue: [], index: 0, correct: 0, missed: [], answered: false };
+
+        const shuffle = (arr) => {
+          const a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        };
+
+        const pool = () => QCODES.filter((x) => !quiz.examOnly || x.x);
+
+        function startQuiz(items = pool()) {
+          quiz.queue = shuffle(items);
+          quiz.index = 0;
+          quiz.correct = 0;
+          quiz.missed = [];
+          renderQuestion();
+        }
+
+        // 数字付きの符号は、数字だけ違う誤答も作る(例: QSA4 に対する QSA5)
+        function fakeVariants(item) {
+          if (!item.num) return [];
+          const base = item.c.slice(0, 3);
+          return [1, 2, 3, 4, 5]
+            .filter((n) => String(n) !== item.c.slice(3))
+            .map((n) => ({ c: base + n, morse: toMorse(base + n), fake: true }));
+        }
+
+        function distractors(item) {
+          const cand = (quiz.examOnly ? pool() : QCODES).filter((x) => x !== item);
+          // 同じ分類・同じ先頭2文字の符号ほど紛らわしい選択肢として優先する
+          const prefix = (x) => x.c.slice(0, 2) === item.c.slice(0, 2);
+          const rank = (x) => (x.g === item.g ? 0 : 2) + (prefix(x) ? 0 : 1);
+          const base = shuffle(cand).sort((x, y) => rank(x) - rank(y));
+          // 意味を選ぶ形式では、意味のない誤答候補は使えない
+          const fakes = quiz.mode === "code" ? [] : shuffle(fakeVariants(item)).slice(0, 2);
+          return [...fakes, ...base].slice(0, 3);
+        }
+
+        const label = (opt) =>
+          quiz.mode === "code" ? opt.m : quiz.mode === "morse" ? opt.morse : opt.c;
+
+        function renderQuestion() {
+          const item = quiz.queue[quiz.index];
+          quiz.answered = false;
+          $("next").hidden = true;
+          $("detail").textContent = "";
+          $("score").textContent = `${quiz.index + 1} / ${quiz.queue.length}  正解 ${quiz.correct}`;
+          if (!item) return renderResult();
+
+          $("prompt").textContent =
+            quiz.mode === "code" ? item.c : quiz.mode === "sound" ? "♪ 聞こえた符号は?" : item.m;
+          $("replay").hidden = quiz.mode !== "sound";
+          if (quiz.mode === "sound") morseAudio.play(item.morse);
+          const options = shuffle([item, ...distractors(item)]);
+          const box = $("choices");
+          box.replaceChildren();
+          options.forEach((opt) => {
+            const b = document.createElement("button");
+            b.textContent = label(opt);
+            b.addEventListener("click", () => answer(b, opt === item, item));
+            box.appendChild(b);
+          });
+        }
+
+        function answer(btn, isCorrect, item) {
+          if (quiz.answered) return;
+          quiz.answered = true;
+          btn.classList.add(isCorrect ? "correct" : "incorrect");
+          if (isCorrect) {
+            quiz.correct++;
+          } else {
+            quiz.missed.push(item);
+            [...$("choices").children].forEach((b) => {
+              if (b.textContent === label(item)) b.classList.add("correct");
+            });
+          }
+          $("detail").textContent =
+            `${item.c} ${item.morse} … ${item.m}` + (item.x ? `  ★${item.x.join(", ")}` : "");
+          $("score").textContent = `${quiz.index + 1} / ${quiz.queue.length}  正解 ${quiz.correct}`;
+          $("next").hidden = false;
+        }
+
+        function renderResult() {
+          $("prompt").textContent = `結果: ${quiz.correct} / ${quiz.queue.length}`;
+          $("choices").replaceChildren();
+          $("detail").textContent = quiz.missed.length
+            ? "間違えた符号: " + quiz.missed.map((x) => x.c).join(", ")
+            : "全問正解です!";
+          $("next").hidden = true;
+        }
+
+        $("next").addEventListener("click", () => {
+          quiz.index++;
+          renderQuestion();
+        });
+        $("restart").addEventListener("click", () => startQuiz());
+        $("retry-missed").addEventListener("click", () => {
+          if (quiz.missed.length) startQuiz(quiz.missed);
+        });
+        $("scope").addEventListener("click", () => {
+          quiz.examOnly = !quiz.examOnly;
+          $("scope").textContent = quiz.examOnly ? "範囲: 過去問に出たもの" : "範囲: すべて";
+          startQuiz();
+        });
+        function setMode(mode) {
+          quiz.mode = mode;
+          ["code", "meaning", "morse", "sound"].forEach((m) =>
+            $("mode-" + m).classList.toggle("active", mode === m)
+          );
+          startQuiz();
+        }
+        $("mode-code").addEventListener("click", () => setMode("code"));
+        $("mode-meaning").addEventListener("click", () => setMode("meaning"));
+        $("mode-morse").addEventListener("click", () => setMode("morse"));
+        $("mode-sound").addEventListener("click", () => setMode("sound"));
+        $("replay").addEventListener("click", () => {
+          const item = quiz.queue[quiz.index];
+          if (item) morseAudio.play(item.morse);
+        });
+
+        window.qcodeInit = () => { if (!quiz.queue.length) startQuiz(); };
+  })();
+    </script>
+    <script>
+      let treeSound = true;
+      const soundToggle = document.getElementById("sound-toggle");
+      soundToggle.addEventListener("click", () => {
+        treeSound = !treeSound;
+        soundToggle.textContent = "木のマスを選ぶと音が鳴る: " + (treeSound ? "ON" : "OFF");
+        soundToggle.classList.toggle("active", treeSound);
+      });
+      document.getElementById("tree").addEventListener("focusin", (e) => {
+        const code = e.target.dataset && e.target.dataset.code;
+        if (treeSound && code && e.target.dataset.char !== "") morseAudio.play(code);
+      });
+      const tabs = {
+        alphabet: ["tab-alphabet", "alphabet-view"],
+        qcode: ["tab-qcode", "qcode-view"],
+      };
+      Object.entries(tabs).forEach(([name, [tabId]]) => {
+        document.getElementById(tabId).addEventListener("click", () => {
+          Object.entries(tabs).forEach(([n, [t, v]]) => {
+            document.getElementById(t).classList.toggle("active", n === name);
+            document.getElementById(v).hidden = n !== name;
+          });
+          if (name === "qcode") qcodeInit();
+        });
+      });
     </script>
   </body>
 </html>
