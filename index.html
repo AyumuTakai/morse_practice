@@ -244,6 +244,88 @@
         font-size: 0.85rem;
         color: #555;
       }
+      #review-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #review-view h2 {
+        font-size: 1.05rem;
+        margin: 1.2em 0 0.4em;
+      }
+      #review-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0.5em 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #review-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 0.8em 1em;
+      }
+      #review-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      #review-view .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3em 1em;
+        font-size: 0.85rem;
+      }
+      #review-view .legend .sw {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        margin-right: 0.3em;
+        vertical-align: -0.15em;
+        border: 1px solid #888;
+        border-radius: 0.3em;
+      }
+      #review-view .tree.readonly input {
+        cursor: default;
+      }
+      #review-view .heat-none {
+        background-color: white !important;
+      }
+      #review-view .heat0 {
+        background-color: #c9f2dc !important;
+      }
+      #review-view .heat1 {
+        background-color: #fff2a8 !important;
+      }
+      #review-view .heat2 {
+        background-color: #ffc78a !important;
+      }
+      #review-view .heat3 {
+        background-color: #ff9d8f !important;
+      }
+      #review-view .qrow {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.1em 0.8em;
+        padding: 0.5em 0;
+        border-bottom: 1px solid #e3e8ee;
+      }
+      #review-view .qrow .code {
+        font-weight: bold;
+        font-family: monospace;
+      }
+      #review-view .qrow .meaning,
+      #review-view .qrow .stat {
+        grid-column: 1 / 3;
+        font-size: 0.9rem;
+      }
+      #review-view .qrow .stat {
+        color: #666;
+        font-size: 0.8rem;
+      }
       #settings-view {
         max-width: 720px;
         margin: 0 auto;
@@ -393,7 +475,8 @@
           padding: 0.5em;
         }
         #listen-view,
-        #check-view {
+        #check-view,
+        #review-view {
           padding: 0.5em;
         }
         /* 下部の Reset / Show / Check */
@@ -478,6 +561,7 @@
           <option value="qcode">Q符号</option>
           <option value="listen">聞き取り</option>
           <option value="check">照合</option>
+          <option value="review">復習</option>
           <option value="settings">設定</option>
         </select>
       </nav>
@@ -599,6 +683,49 @@
           try { localStorage.setItem("morse-settings", JSON.stringify({ ...this.load(), ...patch })); } catch (e) {}
         },
       };
+    </script>
+    <script>
+      // 学習記録(端末内のみ)。キー: "c:A"(文字・記号)、"q:QSY"(Q符号・略符号)
+      // 直近5回の結果を残し、その中の誤答数で「苦手」を判定する(5回続けて正解すれば苦手から外れる)
+      window.morseStats = (() => {
+        const KEY = "morse-stats";
+        const WINDOW = 5;
+        const load = () => {
+          try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+        };
+        let data = load();
+        const save = () => {
+          try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+        };
+        const weakness = (key) => (data[key] ? [...data[key].recent].filter((c) => c === "x").length : -1);
+        return {
+          record(key, ok) {
+            const s = data[key] || { n: 0, miss: 0, recent: "" };
+            s.n++;
+            if (!ok) s.miss++;
+            s.recent = (s.recent + (ok ? "o" : "x")).slice(-WINDOW);
+            data[key] = s;
+            save();
+          },
+          get: (key) => data[key] || null,
+          // 直近の誤答数(0〜5)。記録がなければ -1
+          weakness,
+          // 苦手(直近に誤答がある)なキーを、誤答の多い順に返す
+          weakKeys(prefix) {
+            return Object.keys(data)
+              .filter((k) => k.startsWith(prefix) && weakness(k) > 0)
+              .sort((a, b) => weakness(b) - weakness(a) || data[b].miss / data[b].n - data[a].miss / data[a].n);
+          },
+          totals() {
+            const v = Object.values(data);
+            return { items: v.length, n: v.reduce((a, s) => a + s.n, 0), miss: v.reduce((a, s) => a + s.miss, 0) };
+          },
+          clear() {
+            data = {};
+            save();
+          },
+        };
+      })();
     </script>
     <div id="alphabet-view">
       <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree" data-fit="1"></div></div>
@@ -779,6 +906,7 @@
         <button id="range-alpha" class="active">英字</button>
         <button id="range-alnum">英字+数字</button>
         <button id="range-all">すべて(記号を含む)</button>
+        <button id="range-weak">苦手</button>
         <button id="listen-tree-toggle" class="active">木を見る: ON</button>
       </div>
       <div class="card">
@@ -814,6 +942,25 @@
         <button id="check-submit">答え合わせ</button>
         <button id="check-next" hidden>次の5問</button>
       </div>
+    </div>
+    <div id="review-view" hidden>
+      <div class="card" id="review-summary"></div>
+      <h2>文字・記号の苦手(直近5回)</h2>
+      <div class="legend">
+        <span><i class="sw heat-none"></i>記録なし</span>
+        <span><i class="sw heat0"></i>得意</span>
+        <span><i class="sw heat1"></i>誤り1</span>
+        <span><i class="sw heat2"></i>誤り2</span>
+        <span><i class="sw heat3"></i>誤り3以上</span>
+      </div>
+      <div class="tree-wrap" id="review-tree-wrap"><div class="tree readonly" id="review-tree"></div></div>
+      <div><button id="review-listen">苦手な文字を聞き取り</button></div>
+      <h2>Q符号・略符号の苦手</h2>
+      <div id="review-q"></div>
+      <div><button id="review-qcode">苦手なQ符号をクイズで出題</button></div>
+      <h2>記録</h2>
+      <p class="note">記録はこの端末のブラウザにだけ保存されています。</p>
+      <div><button id="review-clear">記録を消す</button></div>
     </div>
     <div id="settings-view" hidden>
       <div class="row">
@@ -915,13 +1062,16 @@
       });
       checkButton.addEventListener("click", () => {
         inputs.forEach((input) => {
-          if (input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt) {
+          const ok = input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt;
+          if (ok) {
             input.classList.add("correct");
             input.classList.remove("incorrect");
           } else {
             input.classList.add("incorrect");
             input.classList.remove("correct");
           }
+          // 入力のあった文字・記号だけを学習記録に残す(空欄は未挑戦として数えない)
+          if (input.dataset.char && input.value !== "") morseStats.record("c:" + input.dataset.char, ok);
         });
       });
       resetButton.addEventListener("click", () => {
@@ -1069,7 +1219,7 @@
         $("show-all").addEventListener("click", () => setHidden("td:not(.play)", false));
 
         // ---- クイズ ----
-        const quiz = { mode: "code", examOnly: true, queue: [], index: 0, correct: 0, missed: [], answered: false };
+        const quiz = { mode: "code", scope: "exam", queue: [], index: 0, correct: 0, missed: [], answered: false };
 
         const shuffle = (arr) => {
           const a = [...arr];
@@ -1080,9 +1230,28 @@
           return a;
         };
 
-        const pool = () => QCODES.filter((x) => !quiz.examOnly || x.x);
+        const SCOPES = {
+          exam: "範囲: 過去問に出たもの",
+          all: "範囲: すべて",
+          weak: "範囲: 苦手(学習記録から)",
+        };
+        // 苦手: 直近に誤答のある符号(誤答の多い順)
+        const weakItems = () =>
+          morseStats.weakKeys("q:").map((k) => QCODES.find((x) => "q:" + x.c === k)).filter(Boolean);
+        const pool = () =>
+          quiz.scope === "exam" ? QCODES.filter((x) => x.x) : quiz.scope === "weak" ? weakItems() : QCODES;
 
         function startQuiz(items = pool()) {
+          if (!items.length) {
+            quiz.queue = [];
+            $("prompt").textContent = "苦手な符号の記録はまだありません";
+            $("choices").replaceChildren();
+            $("detail").textContent = "クイズで間違えた符号が、ここに出題されます。";
+            $("score").textContent = "";
+            $("next").hidden = true;
+            $("replay").hidden = true;
+            return;
+          }
           quiz.queue = shuffle(items);
           quiz.index = 0;
           quiz.correct = 0;
@@ -1100,7 +1269,7 @@
         }
 
         function distractors(item) {
-          const cand = (quiz.examOnly ? pool() : QCODES).filter((x) => x !== item);
+          const cand = (quiz.scope === "exam" ? pool() : QCODES).filter((x) => x !== item);
           // 同じ分類・同じ先頭2文字の符号ほど紛らわしい選択肢として優先する
           const prefix = (x) => x.c.slice(0, 2) === item.c.slice(0, 2);
           const rank = (x) => (x.g === item.g ? 0 : 2) + (prefix(x) ? 0 : 1);
@@ -1139,6 +1308,7 @@
         function answer(btn, isCorrect, item) {
           if (quiz.answered) return;
           quiz.answered = true;
+          morseStats.record("q:" + item.c, isCorrect);
           btn.classList.add(isCorrect ? "correct" : "incorrect");
           if (isCorrect) {
             quiz.correct++;
@@ -1171,10 +1341,14 @@
         $("retry-missed").addEventListener("click", () => {
           if (quiz.missed.length) startQuiz(quiz.missed);
         });
-        $("scope").addEventListener("click", () => {
-          quiz.examOnly = !quiz.examOnly;
-          $("scope").textContent = quiz.examOnly ? "範囲: 過去問に出たもの" : "範囲: すべて";
+        const setScope = (scope) => {
+          quiz.scope = scope;
+          $("scope").textContent = SCOPES[scope];
           startQuiz();
+        };
+        $("scope").addEventListener("click", () => {
+          const order = Object.keys(SCOPES);
+          setScope(order[(order.indexOf(quiz.scope) + 1) % order.length]);
         });
         function setMode(mode) {
           quiz.mode = mode;
@@ -1203,6 +1377,12 @@
         $("qtab-list").addEventListener("click", () => showQ("list"));
         $("qtab-quiz").addEventListener("click", () => showQ("quiz"));
         window.qcodeInit = () => { if (!quiz.queue.length) startQuiz(); };
+        window.qcodeItems = QCODES;
+        // 復習画面から: 苦手な符号をクイズで出題する
+        window.qcodeStartWeak = () => {
+          setScope("weak");
+          showQ("quiz");
+        };
   })();
     </script>
     <script>
@@ -1217,7 +1397,17 @@
         let tree = null;
         const st = { range: "alpha", current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null };
 
-        const pool = () => TREE_CODES.filter(([ch]) => ch !== "" && RANGES[st.range](ch));
+        const weakSet = () => new Set(morseStats.weakKeys("c:").map((k) => k.slice(2)));
+        // 苦手: 直近に誤答のある文字・記号。記録がなければ英字から出題する
+        const pool = () => {
+          if (st.range === "weak") {
+            const w = weakSet();
+            const p = TREE_CODES.filter(([ch]) => ch !== "" && w.has(ch));
+            if (p.length) return p;
+          }
+          const r = st.range === "weak" ? "alpha" : st.range;
+          return TREE_CODES.filter(([ch]) => ch !== "" && RANGES[r](ch));
+        };
 
         function ensureInput() {
           if (st.input) return;
@@ -1235,7 +1425,9 @@
         }
 
         function score() {
-          $("listen-score").textContent = `正解 ${st.correct} / ${st.total}`;
+          $("listen-score").textContent =
+            `正解 ${st.correct} / ${st.total}` +
+            (st.range === "weak" && !weakSet().size ? "  ※苦手の記録がないため英字から出題" : "");
           $("listen-missed").textContent = st.missed.size ? "間違えた文字: " + [...st.missed].join(" ") : "";
         }
 
@@ -1282,6 +1474,7 @@
           const [ch, code] = st.current;
           st.done = true;
           st.total++;
+          morseStats.record("c:" + ch, isCorrect);
           if (isCorrect) st.correct++;
           else st.missed.add(ch);
           st.input.classList.add(isCorrect ? "correct" : "incorrect");
@@ -1308,16 +1501,20 @@
           if (st.current) morseAudio.play(st.current[1]);
           if (st.input && !st.done) st.input.focus();
         });
-        ["alpha", "alnum", "all"].forEach((r) =>
-          $("range-" + r).addEventListener("click", () => {
-            st.range = r;
-            ["alpha", "alnum", "all"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
-            st.total = 0;
-            st.correct = 0;
-            st.missed.clear();
-            next();
-          })
-        );
+        const setRange = (r) => {
+          st.range = r;
+          ["alpha", "alnum", "all", "weak"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
+          st.total = 0;
+          st.correct = 0;
+          st.missed.clear();
+          next();
+        };
+        ["alpha", "alnum", "all", "weak"].forEach((r) => $("range-" + r).addEventListener("click", () => setRange(r)));
+        // 復習画面から: 苦手な文字を聞き取りで出題する
+        window.listenStartWeak = () => {
+          ensureInput();
+          setRange("weak");
+        };
         $("listen-tree-toggle").addEventListener("click", (e) => {
           const hide = !wrap().hidden;
           wrap().hidden = hide;
@@ -1484,6 +1681,13 @@
 
         function submit() {
           st.submitted = true;
+          // 誤りを見抜けたかを、誤りに関わる文字ごとに記録する(見抜けなければ、その文字と取り違えた文字の両方が苦手)
+          st.items.forEach((it) => {
+            if (!it.fault) return;
+            const i = it.fault.i;
+            const chars = it.fault.type === "swap" ? [it.chars[i], it.chars[i + 1]] : [it.chars[i], it.shown[i]];
+            chars.forEach((c) => morseStats.record("c:" + c, it.answer === 2));
+          });
           const score = st.items.filter((it) => it.answer === (it.fault ? 2 : 1)).length;
           $("check-score").textContent = `${score} / 5 問正解`;
           $("check-submit").hidden = true;
@@ -1504,6 +1708,89 @@
         window.checkInit = () => {
           if (!st.items.length) newSet();
         };
+      })();
+    </script>
+    <script>
+      // 復習: 学習記録から苦手を見える化し、そこから復習を始める
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        let tree = null;
+        const heatClass = (w) => (w < 0 ? "heat-none" : w === 0 ? "heat0" : w === 1 ? "heat1" : w === 2 ? "heat2" : "heat3");
+
+        function renderTree() {
+          if (!tree) {
+            tree = $("review-tree");
+            buildTree(tree);
+            tree.querySelectorAll("input").forEach((el) => {
+              el.value = el.dataset.char;
+              el.readOnly = true;
+              el.tabIndex = -1;
+            });
+          }
+          tree.querySelectorAll("input").forEach((el) => {
+            el.classList.remove("heat-none", "heat0", "heat1", "heat2", "heat3");
+            el.classList.add(heatClass(el.dataset.char ? morseStats.weakness("c:" + el.dataset.char) : -1));
+          });
+        }
+
+        function renderQ() {
+          const box = $("review-q");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("q:").slice(0, 15);
+          if (!keys.length) {
+            box.textContent = "苦手なQ符号・略符号の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = qcodeItems.find((x) => "q:" + x.c === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const code = document.createElement("span");
+            code.className = "code";
+            code.textContent = item.c;
+            const morse = document.createElement("span");
+            morse.textContent = item.morse;
+            const meaning = document.createElement("span");
+            meaning.className = "meaning";
+            meaning.textContent = item.m;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(code, morse, meaning, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function render() {
+          const t = morseStats.totals();
+          const weakChars = morseStats.weakKeys("c:").length;
+          const weakQ = morseStats.weakKeys("q:").length;
+          $("review-summary").textContent = t.n
+            ? `解答 ${t.n} 回、正答率 ${Math.round(((t.n - t.miss) / t.n) * 100)}%。苦手: 文字・記号 ${weakChars} 個、Q符号・略符号 ${weakQ} 個。`
+            : "まだ学習記録がありません。聞き取り・クイズ・照合・木の Check で解答すると、ここに集計されます。";
+          renderTree();
+          renderQ();
+          $("review-listen").disabled = !weakChars;
+          $("review-qcode").disabled = !weakQ;
+        }
+
+        $("review-listen").addEventListener("click", () => {
+          showScreen("listen");
+          listenStartWeak();
+        });
+        $("review-qcode").addEventListener("click", () => {
+          showScreen("qcode");
+          qcodeStartWeak();
+        });
+        $("review-clear").addEventListener("click", () => {
+          if (confirm("学習記録をすべて消します。よろしいですか?")) {
+            morseStats.clear();
+            render();
+          }
+        });
+        window.reviewInit = render;
       })();
     </script>
     <script>
@@ -1540,6 +1827,7 @@
         qcode: "qcode-view",
         listen: "listen-view",
         check: "check-view",
+        review: "review-view",
         settings: "settings-view",
       };
       const screenSelect = document.getElementById("screen-select");
@@ -1552,6 +1840,7 @@
         if (name === "qcode") qcodeInit();
         if (name === "listen") listenInit();
         if (name === "check") checkInit();
+        if (name === "review") reviewInit();
         requestAnimationFrame(() => relayoutTrees());
         if (name !== "listen") morseAudio.stop();
       }
