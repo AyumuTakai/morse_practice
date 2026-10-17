@@ -132,6 +132,17 @@
       [hidden] {
         display: none !important;
       }
+      header nav select {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.3em 0.6em;
+        margin: 0;
+        border: 1px solid white;
+        border-radius: 0.5em;
+        background-color: white;
+        color: lightslategray;
+        cursor: pointer;
+      }
       header {
         display: flex;
         flex-wrap: wrap;
@@ -140,15 +151,98 @@
         gap: 0.2em 0.5em;
         padding: 0.2em 1em;
       }
-      header nav button {
+      #check-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #check-view button {
         height: auto;
-        font-size: 0.9rem;
-        padding: 0.1em 1em;
-        margin-left: 0.3em;
-        border: 1px solid white;
-        background: transparent;
-        color: white;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
         cursor: pointer;
+      }
+      #check-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #check-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 0.4em 1em;
+      }
+      #check-view .q {
+        padding: 0.8em 0;
+        border-bottom: 1px solid #e3e8ee;
+      }
+      #check-view .q:last-child {
+        border-bottom: 0;
+      }
+      #check-view .label {
+        font-weight: bold;
+        margin-right: 0.5em;
+      }
+      #check-view .word {
+        font-family: monospace;
+        font-size: 1.4rem;
+        letter-spacing: 0.15em;
+      }
+      #check-view .morse,
+      #check-view .cols {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3em 0.9em;
+        margin: 0.4em 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.1em;
+      }
+      #check-view .cols .col {
+        text-align: center;
+        padding: 0 0.3em;
+        border-radius: 0.4em;
+      }
+      #check-view .cols .col .ch {
+        display: block;
+        font-family: monospace;
+        font-weight: bold;
+        letter-spacing: 0;
+      }
+      #check-view .cols .col.bad {
+        background-color: #ffe0d6;
+      }
+      #check-view .choices button {
+        border-radius: 0.8em;
+        margin-bottom: 0.2em;
+      }
+      #check-view .choices button.picked {
+        background-color: lightslategray;
+        color: white;
+      }
+      #check-view .mark {
+        font-weight: bold;
+      }
+      #check-view .mark.ok {
+        color: #1a8f5a;
+      }
+      #check-view .mark.ng {
+        color: #c0392b;
+      }
+      #check-view .fb {
+        font-size: 0.9rem;
+        color: #444;
+      }
+      #check-view .score {
+        font-size: 1.2rem;
+        margin: 0.5em 0;
+      }
+      #check-view .note {
+        font-size: 0.85rem;
+        color: #555;
       }
       #settings-view {
         max-width: 720px;
@@ -288,23 +382,18 @@
       .tree .sym {
         background-color: lightyellow;
       }
-      header nav button.active {
-        background: white;
-        color: lightslategray;
-      }
       @media (max-width: 600px) {
         h1 {
-          font-size: 1.1rem;
+          font-size: 1rem;
         }
-        header nav button {
-          font-size: 0.8rem;
-          padding: 0.2em 0.6em;
-          margin-left: 0.2em;
+        header {
+          padding: 0.3em 0.8em;
         }
         #qcode-view {
           padding: 0.5em;
         }
-        #listen-view {
+        #listen-view,
+        #check-view {
           padding: 0.5em;
         }
         /* 下部の Reset / Show / Check */
@@ -384,10 +473,13 @@
     <header>
       <h1>Morse Code Practice</h1>
       <nav>
-        <button id="tab-alphabet" class="active">アルファベット</button>
-        <button id="tab-qcode">Q符号</button>
-        <button id="tab-listen">聞き取り</button>
-        <button id="tab-settings">設定</button>
+        <select id="screen-select" aria-label="画面の切り替え">
+          <option value="alphabet">アルファベット</option>
+          <option value="qcode">Q符号</option>
+          <option value="listen">聞き取り</option>
+          <option value="check">照合</option>
+          <option value="settings">設定</option>
+        </select>
       </nav>
     </header>
     <script>
@@ -706,6 +798,22 @@
         「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度と音程は上のバーで変えられます。
         大文字・小文字は区別しません。
       </p>
+    </div>
+    <div id="check-view" hidden>
+      <div class="toolbar">
+        <button id="check-kind-10" class="active">英字10文字</button>
+        <button id="check-kind-6">英字5文字+数字</button>
+      </div>
+      <p class="note">
+        字句とモールス符号の組合せが、無線局運用規則 別表第1号に適合するか(1)、しないか(2)を答えます。
+        5問のうち誤りはちょうど2問です。
+      </p>
+      <div class="card" id="check-list"></div>
+      <div class="score" id="check-score"></div>
+      <div>
+        <button id="check-submit">答え合わせ</button>
+        <button id="check-next" hidden>次の5問</button>
+      </div>
     </div>
     <div id="settings-view" hidden>
       <div class="row">
@@ -1229,6 +1337,176 @@
       })();
     </script>
     <script>
+      // 字句照合: 過去問の B 問題と同じ形式(字句とモールス符号の組合せが適合するか)
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const CODE = {};
+        TREE_CODES.forEach(([ch, code]) => {
+          if (/^[A-Z0-9]$/.test(ch)) CODE[ch] = code;
+        });
+        const LETTERS = Object.keys(CODE).filter((c) => /[A-Z]/.test(c));
+        const DIGITS = Object.keys(CODE).filter((c) => /[0-9]/.test(c));
+        const fmt = (code) => code.replace(/\./g, "・").replace(/-/g, "－");
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const pick = (a) => a[rnd(a.length)];
+        const KIND = { 10: { letters: 10, digit: false }, 6: { letters: 5, digit: true } };
+        const NAMES = ["ア", "イ", "ウ", "エ", "オ"];
+        // 符号の編集距離(1つ違いほど紛らわしい)
+        const lev = (a, b) => {
+          const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+          for (let j = 1; j <= b.length; j++) d[0][j] = j;
+          for (let i = 1; i <= a.length; i++)
+            for (let j = 1; j <= b.length; j++)
+              d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          return d[a.length][b.length];
+        };
+        const st = { kind: 10, items: [], submitted: false };
+
+        function makeItem(kind, wrong) {
+          const k = KIND[kind];
+          const chars = Array.from({ length: k.letters }, () => pick(LETTERS));
+          if (k.digit) chars.push(pick(DIGITS));
+          const shown = [...chars]; // 符号として表示する文字(誤りの問題では一部が違う)
+          let fault = null;
+          if (wrong) {
+            const swaps = [];
+            for (let i = 0; i + 1 < k.letters; i++) if (chars[i] !== chars[i + 1]) swaps.push(i);
+            if (swaps.length && Math.random() < 0.3) {
+              // 隣り合う2文字の符号が入れ替わっている
+              const i = pick(swaps);
+              [shown[i], shown[i + 1]] = [shown[i + 1], shown[i]];
+              fault = { type: "swap", i };
+            } else {
+              // 似た符号の別の文字に取り違えている(1つ違いを優先)
+              const i = rnd(chars.length);
+              const pool = (/[0-9]/.test(chars[i]) ? DIGITS : LETTERS).filter((c) => c !== chars[i]);
+              const d1 = pool.filter((c) => lev(CODE[c], CODE[chars[i]]) === 1);
+              const d2 = pool.filter((c) => lev(CODE[c], CODE[chars[i]]) <= 2);
+              shown[i] = pick(Math.random() < 0.5 && d1.length ? d1 : d2.length ? d2 : pool);
+              fault = { type: "sub", i };
+            }
+          }
+          return { chars, shown, fault, answer: null };
+        }
+
+        function newSet() {
+          // 5問のうち誤りはちょうど2問(過去問と同じ)
+          const wrong = new Set();
+          while (wrong.size < 2) wrong.add(rnd(5));
+          st.items = Array.from({ length: 5 }, (_, n) => makeItem(st.kind, wrong.has(n)));
+          st.submitted = false;
+          $("check-next").hidden = true;
+          $("check-submit").hidden = false;
+          $("check-score").textContent = "";
+          render();
+        }
+
+        function render() {
+          const list = $("check-list");
+          list.replaceChildren();
+          st.items.forEach((it, n) => {
+            const q = document.createElement("div");
+            q.className = "q";
+            const word = document.createElement("div");
+            const label = document.createElement("span");
+            label.className = "label";
+            label.textContent = NAMES[n];
+            const w = document.createElement("span");
+            w.className = "word";
+            w.textContent = it.chars.join("");
+            word.append(label, w);
+            q.appendChild(word);
+
+            if (!st.submitted) {
+              // 解答前は符号だけを並べる(試験と同じ)
+              const m = document.createElement("div");
+              m.className = "morse";
+              it.shown.forEach((c) => {
+                const s = document.createElement("span");
+                s.textContent = fmt(CODE[c]);
+                m.appendChild(s);
+              });
+              q.appendChild(m);
+            } else {
+              // 解答後は、文字と符号を対応させて見せる
+              const cols = document.createElement("div");
+              cols.className = "cols";
+              const bad = it.fault ? (it.fault.type === "swap" ? [it.fault.i, it.fault.i + 1] : [it.fault.i]) : [];
+              it.shown.forEach((c, i) => {
+                const col = document.createElement("span");
+                col.className = "col" + (bad.includes(i) ? " bad" : "");
+                const ch = document.createElement("span");
+                ch.className = "ch";
+                ch.textContent = it.chars[i];
+                col.append(ch, document.createTextNode(fmt(CODE[c])));
+                cols.appendChild(col);
+              });
+              q.appendChild(cols);
+            }
+
+            const choices = document.createElement("div");
+            choices.className = "choices";
+            [[1, "1 適合する"], [2, "2 適合しない"]].forEach(([v, text]) => {
+              const b = document.createElement("button");
+              b.textContent = text;
+              b.disabled = st.submitted;
+              if (it.answer === v) b.classList.add("picked");
+              b.addEventListener("click", () => {
+                it.answer = v;
+                choices.querySelectorAll("button").forEach((x) => x.classList.remove("picked"));
+                b.classList.add("picked");
+              });
+              choices.appendChild(b);
+            });
+            q.appendChild(choices);
+
+            if (st.submitted) {
+              const truth = it.fault ? 2 : 1;
+              const ok = it.answer === truth;
+              const mark = document.createElement("span");
+              mark.className = "mark " + (ok ? "ok" : "ng");
+              mark.textContent = ok ? "○ 正解" : it.answer ? "× 不正解" : "× 未回答";
+              const fb = document.createElement("div");
+              fb.className = "fb";
+              if (!it.fault) fb.textContent = "すべて適合しています。";
+              else if (it.fault.type === "swap") {
+                const a = it.chars[it.fault.i], b = it.chars[it.fault.i + 1];
+                fb.textContent = `「${a}」と「${b}」の符号の順序が入れ替わっています。`;
+              } else {
+                const a = it.chars[it.fault.i], s = it.shown[it.fault.i];
+                fb.textContent = `「${a}」の符号は ${fmt(CODE[a])} ですが、表示されているのは「${s}」の符号 ${fmt(CODE[s])} です。`;
+              }
+              q.append(mark, fb);
+            }
+            list.appendChild(q);
+          });
+        }
+
+        function submit() {
+          st.submitted = true;
+          const score = st.items.filter((it) => it.answer === (it.fault ? 2 : 1)).length;
+          $("check-score").textContent = `${score} / 5 問正解`;
+          $("check-submit").hidden = true;
+          $("check-next").hidden = false;
+          render();
+          $("check-score").scrollIntoView({ block: "nearest" });
+        }
+
+        $("check-submit").addEventListener("click", submit);
+        $("check-next").addEventListener("click", newSet);
+        [10, 6].forEach((k) =>
+          $("check-kind-" + k).addEventListener("click", () => {
+            st.kind = k;
+            [10, 6].forEach((x) => $("check-kind-" + x).classList.toggle("active", x === k));
+            newSet();
+          })
+        );
+        window.checkInit = () => {
+          if (!st.items.length) newSet();
+        };
+      })();
+    </script>
+    <script>
       const saved = morseSettings.load();
       const wpmSelect = document.getElementById("wpm");
       const toneSelect = document.getElementById("tone");
@@ -1257,24 +1535,29 @@
         const code = e.target.dataset && e.target.dataset.code;
         if (treeSound && code && e.target.dataset.char !== "") morseAudio.play(code);
       });
-      const tabs = {
-        alphabet: ["tab-alphabet", "alphabet-view"],
-        qcode: ["tab-qcode", "qcode-view"],
-        listen: ["tab-listen", "listen-view"],
-        settings: ["tab-settings", "settings-view"],
+      const screens = {
+        alphabet: "alphabet-view",
+        qcode: "qcode-view",
+        listen: "listen-view",
+        check: "check-view",
+        settings: "settings-view",
       };
-      Object.entries(tabs).forEach(([name, [tabId]]) => {
-        document.getElementById(tabId).addEventListener("click", () => {
-          Object.entries(tabs).forEach(([n, [t, v]]) => {
-            document.getElementById(t).classList.toggle("active", n === name);
-            document.getElementById(v).hidden = n !== name;
-          });
-          if (name === "qcode") qcodeInit();
-          if (name === "listen") listenInit();
-          requestAnimationFrame(() => relayoutTrees());
-          if (name !== "listen") morseAudio.stop();
+      const screenSelect = document.getElementById("screen-select");
+      function showScreen(name) {
+        Object.entries(screens).forEach(([n, v]) => {
+          document.getElementById(v).hidden = n !== name;
         });
-      });
+        screenSelect.value = name;
+        morseSettings.save({ screen: name }); // 最後に開いた画面を覚える
+        if (name === "qcode") qcodeInit();
+        if (name === "listen") listenInit();
+        if (name === "check") checkInit();
+        requestAnimationFrame(() => relayoutTrees());
+        if (name !== "listen") morseAudio.stop();
+      }
+      screenSelect.addEventListener("change", () => showScreen(screenSelect.value));
+      // 前回開いていた画面から再開する
+      if (saved.screen && screens[saved.screen] && saved.screen !== "alphabet") showScreen(saved.screen);
     </script>
   </body>
 </html>
