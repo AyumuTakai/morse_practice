@@ -482,8 +482,8 @@
           const r = code.slice(1).match(/^\.*/)[0].length;
           row = 4 - r; col = dashes; level = dots - r; cx = 45 + 10 * col;
         }
-        // cx は列の中心(中央 50 から列の間隔 10 ごと)、dxh は列の中心からのずれ(マスの高さ単位)
-        return { row, col, level, cx, dxh: 0, side: code[0] };
+        // cx は列の中心(中央 50 から列の間隔 10 ごと)。pair は G と Q のように同じ段で横並びにするマス
+        return { row, col, level, cx, pair: null, side: code[0] };
       }
       function buildTree(container) {
         const used = new Set();
@@ -491,8 +491,8 @@
           const p = treePlace(code);
           // 今の見た目を維持するための例外: G と Q は同じ段に横並び、/ は D 行の3列目の底
           let free = true;
-          if (code === "--.") p.dxh = -1;
-          if (code === "--.-") { p.cx = 65; p.dxh = 0.5; p.level = 1; free = false; }
+          if (code === "--.") p.pair = "left";
+          if (code === "--.-") { p.cx = 65; p.pair = "right"; p.level = 1; free = false; }
           if (code === "-..-.") { p.col = 3; p.cx = 75; p.level = 0; }
           const key = () => `${p.side}${p.row}:${p.col}:${p.level}`;
           if (free) {
@@ -510,34 +510,55 @@
         });
         layoutTree(container);
       }
-      // マスの大きさは固定(24〜34px)。列の間隔と行の間隔を、使える幅と高さに合わせて計算する
+      // マスの高さは 24〜34px。横は線のマスの幅、縦は行ごとの間隔を、使える幅と高さに合わせて計算する
       function layoutTree(container) {
         const wrap = container.parentElement;
         const W = wrap.clientWidth;
         if (!W) return false; // 非表示のときは計算できない
         const fit = container.dataset.fit === "1";
-        // 画面の高さのうち、木に使える分(下の Reset / Show / Check の分を残す)
+        const inputs = [...container.querySelectorAll("input")];
+        // 行ごとの段の最大数(その行の上に積み上がる分だけ、次の行との間隔が必要)
+        const rowMax = [0, 0, 0, 0, 0];
+        inputs.forEach((i) => (rowMax[i._place.row] = Math.max(rowMax[i._place.row], i._place.level)));
+        const gapY = 8; // 行どうしの最小の隙間
+        const needUnits = (h) => [4, 3, 2, 1].map((r) => rowMax[r] * 1.093 * h + h + gapY);
+        const sum = (a) => a.reduce((x, y) => x + y, 0);
+        // 画面の高さのうち木に使える分(下の Reset / Show / Check の分を残す)
         const availH = fit ? window.innerHeight - (wrap.getBoundingClientRect().top + window.scrollY) - 100 : Infinity;
-        // マスの大きさ: 幅に応じて 24〜34px。高さが足りないときは、行の間隔の下限(4.8h)で収まる大きさまで下げる
-        const h = Math.max(24, Math.min(34, Math.round(W * 0.032), Math.floor(availH / 20.9)));
-        const pad = 8;
-        // 列の間隔: 画面幅に収まるよう広げる/詰める(狭すぎると隣のマスと重なるので下限あり)
-        const P = Math.max(2.4 * h, Math.min(6 * h, (W - 2 * pad - 2 * h) / 9));
-        const Wt = Math.max(W, Math.ceil(9 * P + 2 * h + 2 * pad));
-        // 行の間隔: 画面の高さが余っていれば広げる(段の積み上げが入る分の下限あり)
-        let R = 4.8 * h;
-        if (fit) R = Math.max(4.8 * h, Math.min(8 * h, (availH - 1.67 * h) / 4));
-        const Ht = Math.ceil(4 * R + 1.67 * h);
+        // マスの高さ: 幅に応じて 24〜34px。縦が足りないときは、必要な高さに収まる大きさまで下げる
+        let h = Math.max(24, Math.min(34, Math.round(W * 0.032)));
+        while (h > 24 && sum(needUnits(h)) + h + 6 > availH) h--;
         const step = 1.093 * h; // 段の間隔
+        const pad = 8;
+        const gapX = 4; // 隣の列との最小の隙間
+        // 線のマスの幅: 広い画面では高さの2倍。狭い画面では、9列ぶんが収まる幅まで狭める(高さの1.2倍が下限)
+        const fitD = Math.floor((W - 2 * pad - 9 * gapX) / 10);
+        const d = Math.max(Math.round(1.2 * h), Math.min(2 * h, fitD));
+        // 列の間隔: 画面幅に収まるよう広げる/詰める
+        const P = Math.max(d + gapX, Math.min(6 * h, (W - 2 * pad - d) / 9));
+        const Wt = Math.max(W, Math.ceil(9 * P + d + 2 * pad));
+        // 行の間隔: 必要な高さを確保し、余りがあれば少しだけ広げる
+        const pitches = needUnits(h);
+        const extra = Math.min(0.75 * h, Math.max(0, (availH - sum(pitches) - h - 6) / 4));
+        const baseTop = [0, 0, 0, 0, 0];
+        const Ht = Math.ceil(sum(pitches) + 4 * extra + h + 6);
+        baseTop[4] = Ht - h;
+        for (let r = 4; r >= 1; r--) baseTop[r - 1] = baseTop[r] - (pitches[4 - r] + extra);
         container.style.width = Wt + "px";
         container.style.height = Ht + "px";
         const nodes = {};
-        container.querySelectorAll("input").forEach((input) => {
+        inputs.forEach((input) => {
           const p = input._place;
           const code = input.dataset.code;
-          const w = code.endsWith("-") ? 2 * h : h;
-          const cx = Wt / 2 + ((p.cx - 50) / 10) * P + p.dxh * h;
-          const top = Ht - (4 - p.row) * R - h - p.level * step;
+          const w = code.endsWith("-") ? d : h;
+          let cx = Wt / 2 + ((p.cx - 50) / 10) * P;
+          if (p.pair) {
+            // G と Q は横並び。右隣の列のマスに触れない範囲で、列の中心にそろえる
+            const total = h + d;
+            const center = Math.min(0, P - h / 2 - 2 - total / 2);
+            cx += center + (p.pair === "left" ? -total / 2 + h / 2 : total / 2 - d / 2);
+          }
+          const top = baseTop[p.row] - p.level * step;
           Object.assign(input.style, {
             left: cx - w / 2 + "px",
             top: top + "px",
