@@ -262,27 +262,14 @@
         -webkit-overflow-scrolling: touch;
       }
       .tree {
-        --u: max(1svw, 8px); /* 1単位。画面が狭くても 8px を下回らない */
         position: relative;
-        width: calc(var(--u) * 100);
-        height: calc(var(--u) * 61);
+        margin: 0 auto;
       }
       .tree input {
         position: absolute;
         text-align: center;
-        height: calc(var(--u) * 3);
         padding: 0;
         margin: 0;
-        /* 16px 未満だと iOS が入力時に画面を拡大してしまう */
-        font-size: max(16px, calc(var(--u) * 2));
-      }
-      .tree input.dot {
-        width: calc(var(--u) * 3);
-        border-radius: calc(var(--u) * 2);
-      }
-      .tree input.dash {
-        width: calc(var(--u) * 6);
-        border-radius: calc(var(--u) * 2);
       }
       .tree-lines {
         position: absolute;
@@ -390,12 +377,6 @@
           font-size: 2rem;
         }
       }
-      /* iPad mini など幅700px以上では、木を画面幅にちょうど収める */
-      @media (min-width: 700px) {
-        .tree {
-          --u: 1svw;
-        }
-      }
     </style>
     <link rel="stylesheet" href="tree.css" />
   </head>
@@ -467,7 +448,7 @@
       };
     </script>
     <div id="alphabet-view">
-      <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree"></div></div>
+      <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree" data-fit="1"></div></div>
       <script>
       // モールス符号の木を生成する。単位は svw(画面幅の1%)。
       // 行: 左は先頭の点の数、右は先頭の線の直後の点の数
@@ -489,8 +470,7 @@
         // 1アマの範囲外で空欄のままにしてある位置
         ["", "..--"], ["", "..--."], ["", "---."], ["", "----"],
       ];
-      const STEP = 3.28; // 段の間隔(高さ3 + 隙間0.28)
-      const TOP_TRIM = 9; // 最上段の上の空白(単位)を詰める
+      // 行・列・段の決め方(座標そのものはレイアウト計算で求める)
       function treePlace(code) {
         const dashes = code.split("-").length - 1;
         const dots = code.length - dashes;
@@ -502,17 +482,17 @@
           const r = code.slice(1).match(/^\.*/)[0].length;
           row = 4 - r; col = dashes; level = dots - r; cx = 45 + 10 * col;
         }
-        return { row, col, level, cx, side: code[0] };
+        // cx は列の中心(中央 50 から列の間隔 10 ごと)、dxh は列の中心からのずれ(マスの高さ単位)
+        return { row, col, level, cx, dxh: 0, side: code[0] };
       }
       function buildTree(container) {
         const used = new Set();
-        const nodes = {}; // 符号 -> 中心座標(線を引くために記録)
         TREE_CODES.forEach(([ch, code, name]) => {
           const p = treePlace(code);
           // 今の見た目を維持するための例外: G と Q は同じ段に横並び、/ は D 行の3列目の底
           let free = true;
-          if (code === "--.") p.cx -= 3;
-          if (code === "--.-") { p.cx = 66.5; p.level = 1; free = false; }
+          if (code === "--.") p.dxh = -1;
+          if (code === "--.-") { p.cx = 65; p.dxh = 0.5; p.level = 1; free = false; }
           if (code === "-..-.") { p.col = 3; p.cx = 75; p.level = 0; }
           const key = () => `${p.side}${p.row}:${p.col}:${p.level}`;
           if (free) {
@@ -525,22 +505,61 @@
           input.dataset.char = ch;
           input.dataset.code = code;
           if (name) { input.classList.add("sym"); input.title = name; }
-          const w = code.endsWith("-") ? 6 : 3;
-          input.style.left = `calc(var(--u) * ${(p.cx - w / 2).toFixed(2)})`;
-          input.style.top = `calc(var(--u) * ${(14 * (p.row + 1) - 3 - p.level * STEP - TOP_TRIM).toFixed(2)})`;
+          input._place = p;
           container.appendChild(input);
-          nodes[code] = { x: p.cx, y: 14 * (p.row + 1) - 1.5 - p.level * STEP };
         });
-        drawTreeLines(container, nodes);
+        layoutTree(container);
+      }
+      // マスの大きさは固定(24〜34px)。列の間隔と行の間隔を、使える幅と高さに合わせて計算する
+      function layoutTree(container) {
+        const wrap = container.parentElement;
+        const W = wrap.clientWidth;
+        if (!W) return false; // 非表示のときは計算できない
+        const fit = container.dataset.fit === "1";
+        // 画面の高さのうち、木に使える分(下の Reset / Show / Check の分を残す)
+        const availH = fit ? window.innerHeight - (wrap.getBoundingClientRect().top + window.scrollY) - 100 : Infinity;
+        // マスの大きさ: 幅に応じて 24〜34px。高さが足りないときは、行の間隔の下限(4.8h)で収まる大きさまで下げる
+        const h = Math.max(24, Math.min(34, Math.round(W * 0.032), Math.floor(availH / 20.9)));
+        const pad = 8;
+        // 列の間隔: 画面幅に収まるよう広げる/詰める(狭すぎると隣のマスと重なるので下限あり)
+        const P = Math.max(2.4 * h, Math.min(6 * h, (W - 2 * pad - 2 * h) / 9));
+        const Wt = Math.max(W, Math.ceil(9 * P + 2 * h + 2 * pad));
+        // 行の間隔: 画面の高さが余っていれば広げる(段の積み上げが入る分の下限あり)
+        let R = 4.8 * h;
+        if (fit) R = Math.max(4.8 * h, Math.min(8 * h, (availH - 1.67 * h) / 4));
+        const Ht = Math.ceil(4 * R + 1.67 * h);
+        const step = 1.093 * h; // 段の間隔
+        container.style.width = Wt + "px";
+        container.style.height = Ht + "px";
+        const nodes = {};
+        container.querySelectorAll("input").forEach((input) => {
+          const p = input._place;
+          const code = input.dataset.code;
+          const w = code.endsWith("-") ? 2 * h : h;
+          const cx = Wt / 2 + ((p.cx - 50) / 10) * P + p.dxh * h;
+          const top = Ht - (4 - p.row) * R - h - p.level * step;
+          Object.assign(input.style, {
+            left: cx - w / 2 + "px",
+            top: top + "px",
+            width: w + "px",
+            height: h + "px",
+            borderRadius: h + "px",
+            fontSize: Math.max(16, Math.round(h * 0.66)) + "px", // 16px 未満だと iOS が入力時に拡大する
+          });
+          nodes[code] = { x: cx, y: top + h / 2 };
+        });
+        drawTreeLines(container, nodes, Wt, Ht, h);
+        return true;
       }
       // 背面に SVG を敷いて、親子を線でつなぐ(入力欄の白い背景が線の端を隠す)
-      function drawTreeLines(container, nodes) {
+      function drawTreeLines(container, nodes, Wt, Ht, h) {
         const NS = "http://www.w3.org/2000/svg";
+        const old = container.querySelector(".tree-lines");
+        if (old) old.remove();
         const svg = document.createElementNS(NS, "svg");
-        svg.setAttribute("viewBox", `0 ${TOP_TRIM} 100 ${70 - TOP_TRIM}`);
-        svg.setAttribute("preserveAspectRatio", "none");
+        svg.setAttribute("viewBox", `0 0 ${Wt} ${Ht}`);
         svg.setAttribute("class", "tree-lines");
-        const root = { x: 50, y: 68.5 };
+        const root = { x: Wt / 2, y: Ht - h / 2 };
         Object.entries(nodes).forEach(([code, n]) => {
           // 親が木の中に無い符号(記号など)は線を引かない
           const parent = code.slice(0, -1);
@@ -555,11 +574,25 @@
         });
         container.insertBefore(svg, container.firstChild);
       }
+      // 画面サイズの変更・タブの切り替えで余白を計算し直す。狭い画面では中央(E と T)が見える位置にスクロールする
+      function relayoutTrees(recenter) {
+        document.querySelectorAll(".tree").forEach((c) => {
+          if (!c.querySelector("input") || !layoutTree(c)) return;
+          const wrap = c.parentElement;
+          if ((recenter || !c._centered) && wrap.scrollWidth > wrap.clientWidth) {
+            wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
+            c._centered = true;
+          }
+        });
+      }
+      let relayoutTimer = null;
+      window.addEventListener("resize", () => {
+        clearTimeout(relayoutTimer);
+        relayoutTimer = setTimeout(() => relayoutTrees(true), 100);
+      });
+      window.addEventListener("load", () => relayoutTrees());
         buildTree(document.getElementById("tree"));
-        // 狭い画面では中央(E と T)が見えるようにスクロールしておく
-        const centerTree = (wrap) => (wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2);
-        centerTree(document.getElementById("tree-wrap"));
-        window.addEventListener("load", () => centerTree(document.getElementById("tree-wrap")));
+        relayoutTrees();
       </script>
     <div class="row-container buttons" style="bottom: 0">
       <button style="bottom: 10%; right: 10%" id="reset">Reset</button>
@@ -1100,6 +1133,7 @@
           wrap().hidden = hide;
           e.target.textContent = "木を見る: " + (hide ? "OFF" : "ON");
           e.target.classList.toggle("active", !hide);
+          if (!hide) relayoutTrees(true);
         });
         window.listenInit = () => {
           ensureInput();
@@ -1155,6 +1189,7 @@
           });
           if (name === "qcode") qcodeInit();
           if (name === "listen") listenInit();
+          requestAnimationFrame(() => relayoutTrees());
           if (name !== "listen") morseAudio.stop();
         });
       });
