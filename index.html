@@ -580,12 +580,12 @@
         const svg = document.createElementNS(NS, "svg");
         svg.setAttribute("viewBox", `0 0 ${Wt} ${Ht}`);
         svg.setAttribute("class", "tree-lines");
-        const root = { x: Wt / 2, y: Ht - h / 2 };
         Object.entries(nodes).forEach(([code, n]) => {
-          // 親が木の中に無い符号(記号など)は線を引かない
+          // 線は遷移できる親子の間だけ。E と T は根(開始位置)から始まるので線は引かない。
+          // 親が木の中に無い符号(記号など)も引かない
           const parent = code.slice(0, -1);
-          if (parent && !nodes[parent]) return;
-          const from = parent ? nodes[parent] : root;
+          if (!parent || !nodes[parent]) return;
+          const from = nodes[parent];
           const line = document.createElementNS(NS, "line");
           line.setAttribute("x1", from.x);
           line.setAttribute("y1", from.y);
