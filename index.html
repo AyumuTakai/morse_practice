@@ -395,18 +395,69 @@
       window.morseAudio = (() => {
         let ctx = null;
         let osc = null;
+        let token = 0; // 再生のたびに増やし、古い予約を無効にする
+        let silentAudio = null;
+        const getCtx = () => {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          ctx = ctx || new Ctx();
+          return ctx;
+        };
+        // iPhone では、サイレントスイッチ(消音)がオンだと Web Audio は鳴らない。
+        // 「再生」扱いに切り替える(iOS 16.4 以降は audioSession、それ未満は無音の <audio> を再生)
+        function allowSilentSwitch() {
+          try {
+            if (navigator.audioSession) {
+              navigator.audioSession.type = "playback";
+              return;
+            }
+          } catch (e) {}
+          if (silentAudio) return;
+          try {
+            const n = 800;
+            const buf = new ArrayBuffer(44 + n);
+            const v = new DataView(buf);
+            const w = (o, str) => [...str].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+            w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt ");
+            v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+            w(36, "data"); v.setUint32(40, n, true);
+            for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+            silentAudio = new Audio(URL.createObjectURL(new Blob([buf], { type: "audio/wav" })));
+            silentAudio.loop = true;
+            silentAudio.setAttribute("playsinline", "");
+            silentAudio.play().catch(() => (silentAudio = null));
+          } catch (e) {}
+        }
+        // 最初のタップ・キー操作の中で音声を有効化する(iOS はユーザー操作の中でないと音を出せない)
+        function unlock() {
+          const c = getCtx();
+          if (!c) return;
+          allowSilentSwitch();
+          if (c.state !== "running") c.resume();
+          try {
+            const src = c.createBufferSource();
+            src.buffer = c.createBuffer(1, 1, 22050);
+            src.connect(c.destination);
+            src.start(0);
+          } catch (e) {}
+          if (c.state === "running") {
+            ["touchend", "pointerdown", "click", "keydown"].forEach((ev) =>
+              document.removeEventListener(ev, unlock, true)
+            );
+          }
+        }
+        ["touchend", "pointerdown", "click", "keydown"].forEach((ev) =>
+          document.addEventListener(ev, unlock, { capture: true, passive: true })
+        );
         const stop = () => {
+          token++;
           if (osc) {
             try { osc.stop(); } catch (e) {}
             osc = null;
           }
         };
-        function play(code) {
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          if (!Ctx) return;
-          ctx = ctx || new Ctx();
-          if (ctx.state === "suspended") ctx.resume();
-          stop();
+        function schedule(code) {
           const unit = 1.2 / Number(document.getElementById("wpm").value);
           const o = ctx.createOscillator();
           const g = ctx.createGain();
@@ -434,6 +485,16 @@
           o.start();
           o.stop(t + 0.05);
           osc = o;
+        }
+        function play(code) {
+          const c = getCtx();
+          if (!c) return;
+          stop();
+          const mine = token;
+          allowSilentSwitch();
+          // 起動(resume)が終わってから予約する。起動前は時計が進まず、予約した音が間に合わなくなる
+          if (c.state === "running") schedule(code);
+          else c.resume().then(() => mine === token && schedule(code)).catch(() => {});
         }
         return { play, stop };
       })();
