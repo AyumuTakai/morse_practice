@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Morse Code Practice</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="モールス" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <style>
       * {
         box-sizing: border-box;
@@ -244,6 +249,85 @@
         font-size: 0.85rem;
         color: #555;
       }
+      #proc-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #proc-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #proc-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #proc-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 1em;
+      }
+      #proc-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      #proc-view .prompt {
+        font-size: 1.15rem;
+        margin: 0.4em 0 0.8em;
+      }
+      #proc-view .choices {
+        display: grid;
+        gap: 0.5em;
+      }
+      #proc-view .choices button,
+      #proc-view .chips button {
+        border-radius: 0.8em;
+        text-align: left;
+        background: white;
+        margin: 0;
+      }
+      #proc-view .choices button.correct,
+      #proc-view .placed li.ok {
+        background-color: aquamarine;
+      }
+      #proc-view .choices button.incorrect,
+      #proc-view .placed li.ng {
+        background-color: coral;
+      }
+      #proc-view .chips {
+        display: grid;
+        gap: 0.5em;
+        margin-top: 0.8em;
+      }
+      #proc-view .chips button:disabled {
+        display: none; /* 並べたものは隠す(1つ戻すと再び現れる) */
+      }
+      #proc-view .placed {
+        margin: 0;
+        padding-left: 1.6em;
+        min-height: 2em;
+      }
+      #proc-view .placed li {
+        padding: 0.4em 0.6em;
+        margin-bottom: 0.3em;
+        border: 1px solid #ccc;
+        border-radius: 0.6em;
+      }
+      #proc-view .fb {
+        margin: 0.8em 0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      #proc-view .fb .art {
+        font-weight: bold;
+      }
       #review-view {
         max-width: 720px;
         margin: 0 auto;
@@ -476,6 +560,7 @@
         }
         #listen-view,
         #check-view,
+        #proc-view,
         #review-view {
           padding: 0.5em;
         }
@@ -561,6 +646,7 @@
           <option value="qcode">Q符号</option>
           <option value="listen">聞き取り</option>
           <option value="check">照合</option>
+          <option value="proc">手順</option>
           <option value="review">復習</option>
           <option value="settings">設定</option>
         </select>
@@ -633,8 +719,11 @@
             osc = null;
           }
         };
-        function schedule(code) {
-          const unit = 1.2 / Number(document.getElementById("wpm").value);
+        function schedule(code, opts) {
+          // 速度(WPM)は引数があればそれを、なければ設定の値を使う。gap は文字と文字の間隔の倍率
+          const wpm = (opts && opts.wpm) || Number(document.getElementById("wpm").value);
+          const gap = (opts && opts.gap) || Number(document.getElementById("gap").value) || 1;
+          const unit = 1.2 / wpm;
           const o = ctx.createOscillator();
           const g = ctx.createGain();
           o.frequency.value = Number(document.getElementById("tone").value);
@@ -653,7 +742,7 @@
           symbols.forEach((s, i) => {
             if (s === ".") on(unit);
             else if (s === "-") on(unit * 3);
-            else if (s === " ") { t += unit * 2; return; } // 直前の符号間1単位と合わせて文字間3単位
+            else if (s === " ") { t += unit * (3 * gap - 1); return; } // 直前の符号間1単位と合わせて文字間3単位(×倍率)
             const next = symbols[i + 1];
             if (next === "." || next === "-") t += unit;
             else if (next === " ") t += unit;
@@ -662,25 +751,30 @@
           o.stop(t + 0.05);
           osc = o;
         }
-        function play(code) {
+        function play(code, opts) {
           const c = getCtx();
           if (!c) return;
           stop();
           const mine = token;
           allowSilentSwitch();
           // 起動(resume)が終わってから予約する。起動前は時計が進まず、予約した音が間に合わなくなる
-          if (c.state === "running") schedule(code);
-          else c.resume().then(() => mine === token && schedule(code)).catch(() => {});
+          if (c.state === "running") schedule(code, opts);
+          else c.resume().then(() => mine === token && schedule(code, opts)).catch(() => {});
         }
         return { play, stop };
       })();
       // 設定の保存(端末内のみ)
+      let settingsMem = null;
       window.morseSettings = {
         load() {
-          try { return JSON.parse(localStorage.getItem("morse-settings")) || {}; } catch (e) { return {}; }
+          if (!settingsMem) {
+            try { settingsMem = JSON.parse(localStorage.getItem("morse-settings")) || {}; } catch (e) { settingsMem = {}; }
+          }
+          return settingsMem;
         },
         save(patch) {
-          try { localStorage.setItem("morse-settings", JSON.stringify({ ...this.load(), ...patch })); } catch (e) {}
+          settingsMem = { ...this.load(), ...patch };
+          try { localStorage.setItem("morse-settings", JSON.stringify(settingsMem)); } catch (e) {}
         },
       };
     </script>
@@ -909,9 +1003,15 @@
         <button id="range-weak">苦手</button>
         <button id="listen-tree-toggle" class="active">木を見る: ON</button>
       </div>
+      <div class="toolbar">
+        <button id="group-1" class="active">1文字</button>
+        <button id="group-3">3文字</button>
+        <button id="group-5">5文字</button>
+      </div>
       <div class="card">
         <div class="note" id="listen-score"></div>
         <div class="big" id="listen-result">♪</div>
+        <div class="note" id="listen-given"></div>
         <div id="listen-input-box"></div>
         <div style="margin-top: 0.8em">
           <button id="listen-replay">▶ 再生</button>
@@ -923,7 +1023,7 @@
       </div>
       <div class="tree-wrap" id="listen-tree-wrap"><div class="tree readonly" id="listen-tree"></div></div>
       <p class="note">
-        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度と音程は上のバーで変えられます。
+        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度・音程・文字の間隔・自動加速は「設定」で変えられます。
         大文字・小文字は区別しません。
       </p>
     </div>
@@ -943,6 +1043,27 @@
         <button id="check-next" hidden>次の5問</button>
       </div>
     </div>
+    <div id="proc-view" hidden>
+      <div class="toolbar">
+        <button id="proc-scope-all" class="active">すべて</button>
+        <button id="proc-scope-weak">苦手</button>
+      </div>
+      <div class="card">
+        <div class="note" id="proc-meta"></div>
+        <div class="prompt" id="proc-q"></div>
+        <div id="proc-body"></div>
+        <div class="fb" id="proc-fb"></div>
+        <div class="actions">
+          <button id="proc-undo" hidden>1つ戻す</button>
+          <button id="proc-submit" hidden>答え合わせ</button>
+          <button id="proc-next" hidden>次へ</button>
+        </div>
+      </div>
+      <p class="note">
+        無線局運用規則(第20〜39条、第131〜135条)の手順の問題です。条文の番号は解答後に表示します。
+        試験では、手順の中の符号・回数・時間が空欄になって出題されます。
+      </p>
+    </div>
     <div id="review-view" hidden>
       <div class="card" id="review-summary"></div>
       <h2>文字・記号の苦手(直近5回)</h2>
@@ -958,6 +1079,9 @@
       <h2>Q符号・略符号の苦手</h2>
       <div id="review-q"></div>
       <div><button id="review-qcode">苦手なQ符号をクイズで出題</button></div>
+      <h2>運用手順の苦手</h2>
+      <div id="review-proc"></div>
+      <div><button id="review-proc-start">苦手な手順を出題</button></div>
       <h2>記録</h2>
       <p class="note">記録はこの端末のブラウザにだけ保存されています。</p>
       <div><button id="review-clear">記録を消す</button></div>
@@ -986,6 +1110,20 @@
           <option value="800">800</option>
         </select>
         <span>Hz</span>
+      </div>
+      <div class="row">
+        <label for="gap">文字の間隔</label>
+        <select id="gap">
+          <option value="1" selected>標準</option>
+          <option value="2">2倍</option>
+          <option value="3">3倍</option>
+        </select>
+        <span class="note">文字は標準の速さのまま、文字と文字の間だけを広げます(ファーンズワース方式)。</span>
+      </div>
+      <div class="row">
+        <label>自動加速</label>
+        <button id="ramp-toggle">OFF</button>
+        <span class="note">聞き取りで5問続けて正解するたびに、速度を1 WPM 上げます(上限30 WPM)。</span>
       </div>
       <div class="row">
         <label>サウンド</label>
@@ -1395,7 +1533,20 @@
           all: () => true,
         };
         let tree = null;
-        const st = { range: "alpha", current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null };
+        const st = {
+          range: "alpha", group: 1, current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null,
+          speed: null, streak: 0,
+        };
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const rampOn = () => !!morseSettings.load().ramp;
+        // 再生する速度。自動加速がONのときは、正解が続くと上がっていく
+        const listenWpm = () => {
+          const base = Number($("wpm").value);
+          if (!rampOn()) return base;
+          if (!st.speed) st.speed = base;
+          return st.speed;
+        };
+        const play = () => morseAudio.play(st.current[1], { wpm: listenWpm() });
 
         const weakSet = () => new Set(morseStats.weakKeys("c:").map((k) => k.slice(2)));
         // 苦手: 直近に誤答のある文字・記号。記録がなければ英字から出題する
@@ -1427,6 +1578,7 @@
         function score() {
           $("listen-score").textContent =
             `正解 ${st.correct} / ${st.total}` +
+            (rampOn() ? `  速度 ${listenWpm()} WPM(自動加速)` : "") +
             (st.range === "weak" && !weakSet().size ? "  ※苦手の記録がないため英字から出題" : "");
           $("listen-missed").textContent = st.missed.size ? "間違えた文字: " + [...st.missed].join(" ") : "";
         }
@@ -1443,12 +1595,17 @@
           });
         }
         const wrap = () => $("listen-tree-wrap");
-        const mark = (ch) => {
+        // 答えの文字(群なら複数)の木のマスを光らせる
+        const mark = (chars) => {
+          let scrolled = false;
           tree.querySelectorAll("input").forEach((el) => {
-            const hit = ch !== null && el.dataset.char === ch;
+            const hit = chars !== null && el.dataset.char !== "" && chars.includes(el.dataset.char);
             el.classList.toggle("hit", hit);
-            // 答えのマスが画面外なら横スクロールで見える位置へ
-            if (hit) wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+            // 最初の答えのマスが画面外なら、横スクロールで見える位置へ
+            if (hit && !scrolled) {
+              scrolled = true;
+              wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+            }
           });
         };
 
@@ -1456,10 +1613,20 @@
           ensureInput();
           ensureTree();
           mark(null);
-          const choices = pool().filter(([ch]) => ch !== st.last);
-          st.current = choices[Math.floor(Math.random() * choices.length)];
+          if (!rampOn()) st.speed = null;
+          const p = pool();
+          // 1文字のときは直前と同じ文字を避ける。群のときは、各文字を無作為に選ぶ
+          const picks = [];
+          for (let i = 0; i < st.group; i++) {
+            const c = p.filter(([ch]) => st.group > 1 || p.length < 2 || ch !== st.last);
+            picks.push(c[rnd(c.length)]);
+          }
+          st.current = [picks.map((x) => x[0]).join(""), picks.map((x) => x[1]).join(" "), picks.map((x) => x[0])];
           st.last = st.current[0];
           st.done = false;
+          st.input.maxLength = st.group;
+          st.input.style.width = `${Math.max(4, st.group * 1.3 + 1.5)}em`;
+          $("listen-given").textContent = "";
           st.input.value = "";
           st.input.classList.remove("correct", "incorrect");
           $("listen-result").textContent = "♪";
@@ -1470,17 +1637,32 @@
           st.input.focus();
         }
 
-        function finish(isCorrect, given) {
-          const [ch, code] = st.current;
+        function finish(given) {
+          const [str, code, chars] = st.current;
+          const g = given.toUpperCase();
+          const isCorrect = g === str;
           st.done = true;
           st.total++;
-          morseStats.record("c:" + ch, isCorrect);
+          // 文字ごとに、その位置で合っていたかを学習記録に残す
+          chars.forEach((c, i) => {
+            const ok = g[i] === c;
+            morseStats.record("c:" + c, ok);
+            if (!ok) st.missed.add(c);
+          });
           if (isCorrect) st.correct++;
-          else st.missed.add(ch);
+          // 自動加速: 5問続けて正解したら 1 WPM 上げる(上限30)
+          if (isCorrect) {
+            st.streak++;
+            if (rampOn() && st.streak >= 5) {
+              st.speed = Math.min(30, listenWpm() + 1);
+              st.streak = 0;
+            }
+          } else st.streak = 0;
           st.input.classList.add(isCorrect ? "correct" : "incorrect");
-          mark(ch);
+          mark(chars);
           const dd = code.replace(/\./g, "・").replace(/-/g, "－");
-          $("listen-result").textContent = (isCorrect ? "正解! " : given ? "不正解… " : "") + `${ch}  ${dd}`;
+          $("listen-result").textContent = (isCorrect ? "正解! " : g ? "不正解… " : "") + `${str}  ${dd}`;
+          $("listen-given").textContent = !isCorrect && g ? `あなたの答え: ${g}` : "";
           $("listen-answer").hidden = true;
           $("listen-giveup").hidden = true;
           $("listen-next").hidden = false;
@@ -1491,14 +1673,14 @@
         function submit() {
           const given = st.input.value.trim();
           if (!given || st.done) return;
-          finish(given.toUpperCase() === st.current[0], given);
+          finish(given);
         }
 
         $("listen-answer").addEventListener("click", submit);
-        $("listen-giveup").addEventListener("click", () => !st.done && finish(false, ""));
+        $("listen-giveup").addEventListener("click", () => !st.done && finish(""));
         $("listen-next").addEventListener("click", next);
         $("listen-replay").addEventListener("click", () => {
-          if (st.current) morseAudio.play(st.current[1]);
+          if (st.current) play();
           if (st.input && !st.done) st.input.focus();
         });
         const setRange = (r) => {
@@ -1510,6 +1692,16 @@
           next();
         };
         ["alpha", "alnum", "all", "weak"].forEach((r) => $("range-" + r).addEventListener("click", () => setRange(r)));
+        const setGroup = (n) => {
+          st.group = n;
+          [1, 3, 5].forEach((x) => $("group-" + x).classList.toggle("active", x === n));
+          st.total = 0;
+          st.correct = 0;
+          st.streak = 0;
+          st.missed.clear();
+          next();
+        };
+        [1, 3, 5].forEach((n) => $("group-" + n).addEventListener("click", () => setGroup(n)));
         // 復習画面から: 苦手な文字を聞き取りで出題する
         window.listenStartWeak = () => {
           ensureInput();
@@ -1711,6 +1903,230 @@
       })();
     </script>
     <script>
+      // 運用手順: 無線局運用規則(第20〜39条、第131〜135条)の手順を、選択式と並べ替え式で練習する
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        // kind: choice = 4択 / order = 手順を順に並べる。art は根拠の条文。
+        const PROCS = [
+          { id: "call-self", art: "第20条", kind: "choice", q: "呼出事項のうち、自局の呼出符号を送信する回数は?", a: "3回以下", d: ["1回", "2回以下", "5回以下"],
+            exp: "呼出事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(3回以下)の順に送信します。海上移動業務では、呼出符号は2回以下です。" },
+          { id: "answer-self", art: "第23条", kind: "choice", q: "応答事項のうち、自局の呼出符号を送信する回数は?", a: "1回", d: ["2回以下", "3回以下", "5回以下"],
+            exp: "応答事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(1回)の順です。呼出しと違い、自局の呼出符号は1回です。" },
+          { id: "answer-k", art: "第23条", kind: "choice", q: "応答に際して直ちに通報を受信しようとするとき、応答事項の次に送信する略符号は?", a: "K", d: ["AS", "R", "VA"],
+            exp: "応答事項の次に「K」を送信します。" },
+          { id: "answer-as", art: "第23条", kind: "choice", q: "応答に際して直ちに通報を受信できない事由があるとき、「K」の代わりに送信する略符号は?", a: "AS", d: ["K", "NIL", "BK"],
+            exp: "「K」の代わりに「AS」と、分で表す概略の待つべき時間を送信します。" },
+          { id: "wait-reason", art: "第23条", kind: "choice", q: "概略の待つべき時間が何分以上のとき、その理由を簡単に送信しなければならないか?", a: "10分以上", d: ["5分以上", "15分以上", "30分以上"],
+            exp: "待つべき時間が10分以上のときは、その理由を簡単に送信しなければなりません。" },
+          { id: "msg-ar", art: "第29条", kind: "choice", q: "欧文の通報の送信は、何をもって終わるか?", a: "AR", d: ["K", "VA", "NIL"],
+            exp: "通報は、和文では「ラタ」、欧文では「AR」で終わります。通報の送信は、相手局の呼出符号(1回)、DE(1回)、自局の呼出符号(1回)、通報、K(1回)の順です。" },
+          { id: "long-tx", art: "第30条", kind: "choice", q: "長時間継続して通報を送信するとき、アマチュア局は何分ごとを標準として DE と自局の呼出符号を送信しなければならないか?", a: "10分", d: ["3分", "30分", "60分"],
+            exp: "一般の無線局は30分ごとですが、アマチュア局は10分ごとを標準とします。" },
+          { id: "fix-code", art: "第31条", kind: "choice", q: "欧文の送信中に誤った送信をしたことを知ったとき、前置する符号は?", a: "・・・・・・・・(8連点)", d: ["RPT", "AR(・－・－・)", "VA(・・・－・－)"],
+            exp: "自動機による送信と手送による欧文の送信では、訂正符号(8連点)を前置します。手送による和文では「ラタ」です。" },
+          { id: "fix-from", art: "第31条", kind: "choice", q: "誤送を訂正するとき、訂正符号に続けて、どこから更に送信するか?", a: "正しく送信した適当の語字から", d: ["通報の最初から", "誤った語字から", "通報の末尾から"],
+            exp: "訂正符号を前置して、正しく送信した適当の語字から更に送信します。" },
+          { id: "repeat", art: "第32条", kind: "choice", q: "相手局に通報の反復を求めるとき、送信する略符号は?", a: "RPT", d: ["AR", "BT", "NIL"],
+            exp: "「RPT」の次に、反復する箇所を示します。" },
+          { id: "qsw-34", art: "第34条", kind: "choice", q: "通信中に周波数の変更を要求するとき、「?」を送信するのは、どの符号を送信したときに限るか?", a: "QSW", d: ["QSU", "QSY", "QSX"],
+            exp: "第34条は、(1) QSU又はQSW若しくはQSY(1回)、(2) 変更後の周波数(1回)、(3) ?(「QSW」を送信したときに限る)(1回)の順です。第27条の「QSU」との違いに注意してください。" },
+          { id: "qsu-27", art: "第27条", kind: "choice", q: "呼出し・応答の際に通常通信電波以外の電波を用いるとき、「?」を送信するのは、どの符号を送信したときに限るか?", a: "QSU", d: ["QSW", "QSY", "QSX"],
+            exp: "第27条は、(1) QSW又はQSU(1回)、(2) 用いる電波の周波数(1回)、(3) ?(「QSU」を送信したときに限る)(1回)の順です。第34条の「QSW」と逆なので注意してください。" },
+          { id: "qsx-28", art: "第28条", kind: "choice", q: "電波の変更の通知(第27条)に同意するとき、応答事項の次に送信する符号は?", a: "QSX", d: ["QSY", "QSL", "QSW"],
+            exp: "応答事項の次に、「QSX」(1回)、続いて「K」(直ちに通報を受信しようとする場合に限る)を送信します。" },
+          { id: "accept-35", art: "第35条", kind: "choice", q: "通信中の周波数変更の要求(第34条)に応じるとき、送信する略符号は?", a: "R", d: ["K", "QSX", "VA"],
+            exp: "「R」を送信し(必要なら「QSW」と周波数を続けて送信)、直ちに周波数を変更します。" },
+          { id: "end-msg", art: "第36条", kind: "choice", q: "通報の送信を終了し、他に送信すべき通報がないことを通知するとき、通報に続いて順次送信する符号は?", a: "NIL、K", d: ["K、NIL", "VA、K", "AR、NIL"],
+            exp: "送信した通報に続いて、「NIL」「K」の順に送信します。" },
+          { id: "receipt-r", art: "第37条", kind: "choice", q: "通報を確実に受信したとき(受信証)、DE と呼出符号に続けて送信する略符号は?", a: "R", d: ["K", "VA", "AS"],
+            exp: "受信証は、相手局の呼出符号(1回)、DE(1回)、自局の呼出符号(1回)、R(1回)、最後に受信した通報の番号(1回)の順です。" },
+          { id: "end-comm", art: "第38条", kind: "choice", q: "通信が終了したときに送信する略符号は?(海上移動業務以外では省略できる)", a: "VA", d: ["AR", "NIL", "BT"],
+            exp: "通信が終了したときは「VA」を送信します。" },
+          { id: "test-first", art: "第39条", kind: "choice", q: "無線機器の試験・調整のための電波を発射する前に、最初に送信する符号は?", a: "EX(3回)", d: ["VVV(3回)", "CQ(3回)", "QRT(3回)"],
+            exp: "EX(3回)、DE(1回)、自局の呼出符号(3回)の順に送信し、更に1分間聴守して、他の無線局から停止の請求がない場合に限り、VVV の連続と自局の呼出符号(1回)を送信します。" },
+          { id: "test-listen", art: "第39条", kind: "choice", q: "試験電波の符号(EX、DE、呼出符号)を送信したあと、更に行う聴守の時間は?", a: "1分間", d: ["10秒間", "3分間", "10分間"],
+            exp: "更に1分間聴守して、他の無線局から停止の請求がない場合に限り、VVV の連続と自局の呼出符号を送信します。" },
+          { id: "test-vvv", art: "第39条", kind: "choice", q: "「VVV」の連続と自局の呼出符号の送信は、原則として何秒間をこえてはならないか?", a: "10秒間", d: ["1分間", "30秒間", "3分間"],
+            exp: "10秒間をこえてはなりません。ただし、海上移動業務以外の無線局(アマチュア局など)は、必要があるときは10秒間をこえて送信することができます。" },
+          { id: "emg-oso", art: "第131条", kind: "choice", q: "非常通信で連絡を設定するための呼出し・応答は、呼出事項・応答事項に何を3回前置して行うか?", a: "OSO", d: ["EXZ", "SOS", "CQ"],
+            exp: "呼出事項又は応答事項に「OSO」3回を前置します。" },
+          { id: "emg-cq", art: "第133条", kind: "choice", q: "非常通信で、各局あての一括呼出しを行うとき、「CQ」の前に3回送信する符号は?", a: "OSO", d: ["EXZ", "SOS", "DE"],
+            exp: "「CQ」の前に「OSO」3回を送信します。" },
+          { id: "emg-exz", art: "第135条", kind: "choice", q: "非常通信で通報を送信しようとするとき、欧文の場合に前置する略符号は?", a: "EXZ", d: ["OSO", "SOS", "XXX"],
+            exp: "通報を送信するときは、「ヒゼウ」(欧文では「EXZ」)を前置します。" },
+          { id: "qtc-qru", art: "第24条", kind: "choice", q: "呼出し・応答に際し、相手局に送信すべき通報の有無を知らせるとき、呼出事項・応答事項の次に送信する符号は?", a: "QTC又はQRU", d: ["QSG又はQSL", "QRV又はQRX", "QRM又はQRN"],
+            exp: "「QTC」(通報あり。通数を続けて示せる)又は「QRU」(通報なし)を送信します。" },
+          { id: "qsg", art: "第25条", kind: "choice", q: "通報を連続して送信しようとするとき、相手局の同意を求めるために送信する符号は?", a: "QSG?", d: ["QSL?", "QSM?", "QSP?"],
+            exp: "「QSG?」を送信します。同意するときは「QSG」(必要なら通数を付ける)、拒絶するときは「QSG NO」を送信します。" },
+          { id: "qrz-26", art: "第26条", kind: "choice", q: "自局への呼出しを受信したが、呼出局の呼出符号が不確実なとき、応答事項の相手局の呼出符号の代わりに使う符号は?", a: "QRZ?", d: ["QRA?", "QRL?", "QRU?"],
+            exp: "相手局の呼出符号の代わりに「QRZ?」を使って、直ちに応答します。" },
+
+          { id: "o-call", art: "第20条", kind: "order", q: "呼出しの手順(呼出事項)を、順に並べてください。", steps: ["相手局の呼出符号(3回以下)", "DE(1回)", "自局の呼出符号(3回以下)"],
+            exp: "呼出事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(3回以下)の順です。" },
+          { id: "o-answer", art: "第23条", kind: "order", q: "応答の手順を、順に並べてください(直ちに通報を受信しようとする場合)。", steps: ["相手局の呼出符号(3回以下)", "DE(1回)", "自局の呼出符号(1回)", "K"],
+            exp: "応答事項(相手局の呼出符号、DE、自局の呼出符号)の次に K を送信します。" },
+          { id: "o-msg", art: "第29条", kind: "order", q: "通報の送信の手順を、順に並べてください。", steps: ["相手局の呼出符号(1回)", "DE(1回)", "自局の呼出符号(1回)", "通報(欧文は AR で終わる)", "K(1回)"],
+            exp: "呼出しに使った電波と同一の電波で送信するときは、最初の3つを省略できます。" },
+          { id: "o-receipt", art: "第37条", kind: "order", q: "受信証の手順を、順に並べてください。", steps: ["相手局の呼出符号(1回)", "DE(1回)", "自局の呼出符号(1回)", "R(1回)", "最後に受信した通報の番号(1回)"],
+            exp: "海上移動業務以外では、最初の3つ(呼出符号・DE・呼出符号)を省略できます。" },
+          { id: "o-end", art: "第36条", kind: "order", q: "通報の送信を終え、他に送信する通報がないことを通知する手順を、順に並べてください。", steps: ["NIL", "K"],
+            exp: "送信した通報に続けて、NIL、K の順に送信します。" },
+          { id: "o-test", art: "第39条", kind: "order", q: "試験電波を発射するときの手順を、順に並べてください(発射前の聴守は済んでいるものとします)。", steps: ["EX(3回)", "DE(1回)", "自局の呼出符号(3回)", "1分間の聴守", "VVV の連続と自局の呼出符号(1回)"],
+            exp: "停止の請求がない場合に限り、最後に VVV の連続と自局の呼出符号を送信します。" },
+          { id: "o-freq34", art: "第34条", kind: "order", q: "通信中に周波数の変更を要求する手順を、順に並べてください(QSW を送信する場合)。", steps: ["QSU又はQSW若しくはQSY(1回)", "変更後の周波数(1回)", "?(QSWを送信したときに限る)(1回)"],
+            exp: "周波数があらかじめ定められているときは、(2)の周波数の送信を省略できます。" },
+          { id: "o-freq27", art: "第27条", kind: "order", q: "呼出し・応答の際に電波を変更する通知の手順を、順に並べてください(QSU を送信する場合)。", steps: ["呼出事項又は応答事項", "QSW又はQSU(1回)", "用いる電波の周波数(1回)", "?(QSUを送信したときに限る)(1回)"],
+            exp: "周波数があらかじめ定められているときは、周波数の送信を省略できます。" },
+        ];
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const shuffle = (arr) => {
+          const a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = rnd(i + 1);
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        };
+        const st = { scope: "all", cur: null, last: null, placed: [], done: false, total: 0, correct: 0 };
+        const weakItems = () =>
+          morseStats.weakKeys("p:").map((k) => PROCS.find((x) => "p:" + x.id === k)).filter(Boolean);
+        const pool = () => (st.scope === "weak" ? weakItems() : PROCS);
+
+        function setButtons({ undo = false, submit = false, next = false }) {
+          $("proc-undo").hidden = !undo;
+          $("proc-submit").hidden = !submit;
+          $("proc-next").hidden = !next;
+        }
+
+        function finish(ok) {
+          const it = st.cur;
+          st.done = true;
+          st.total++;
+          if (ok) st.correct++;
+          morseStats.record("p:" + it.id, ok);
+          $("proc-fb").replaceChildren();
+          const art = document.createElement("span");
+          art.className = "art";
+          art.textContent = `${ok ? "正解" : "不正解"}(無線局運用規則 ${it.art})`;
+          $("proc-fb").append(art, document.createElement("br"), document.createTextNode(it.exp));
+          if (it.kind === "order" && !ok) {
+            const ans = document.createElement("div");
+            ans.textContent = "正しい順序: " + it.steps.map((s, i) => `${i + 1}. ${s}`).join(" → ");
+            $("proc-fb").appendChild(ans);
+          }
+          setButtons({ next: true });
+          $("proc-meta").textContent = `今回 ${st.correct} / ${st.total} 問正解`;
+        }
+
+        function renderChoice(it) {
+          const box = document.createElement("div");
+          box.className = "choices";
+          shuffle([it.a, ...it.d]).forEach((text) => {
+            const b = document.createElement("button");
+            b.textContent = text;
+            b.addEventListener("click", () => {
+              if (st.done) return;
+              const ok = text === it.a;
+              b.classList.add(ok ? "correct" : "incorrect");
+              if (!ok) [...box.children].forEach((x) => x.textContent === it.a && x.classList.add("correct"));
+              finish(ok);
+            });
+            box.appendChild(b);
+          });
+          $("proc-body").appendChild(box);
+        }
+
+        function renderOrder(it) {
+          const placed = document.createElement("ol");
+          placed.className = "placed";
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          function draw() {
+            placed.replaceChildren();
+            st.placed.forEach((p) => {
+              const li = document.createElement("li");
+              li.textContent = p.s;
+              placed.appendChild(li);
+            });
+            setButtons({ undo: st.placed.length > 0 && !st.done, submit: st.placed.length === it.steps.length && !st.done });
+          }
+          shuffle(it.steps.map((s, i) => ({ s, i }))).forEach(({ s, i }) => {
+            const b = document.createElement("button");
+            b.textContent = s;
+            b.addEventListener("click", () => {
+              if (st.done) return;
+              st.placed.push({ s, i, b });
+              b.disabled = true;
+              draw();
+            });
+            chips.appendChild(b);
+          });
+          st.undo = () => {
+            const p = st.placed.pop();
+            if (p) p.b.disabled = false;
+            draw();
+          };
+          st.submit = () => {
+            const items = [...placed.children];
+            let ok = true;
+            st.placed.forEach((p, n) => {
+              const right = p.i === n;
+              if (!right) ok = false;
+              items[n].classList.add(right ? "ok" : "ng");
+            });
+            finish(ok);
+          };
+          $("proc-body").append(placed, chips);
+          draw();
+        }
+
+        function next() {
+          const p = pool();
+          if (!p.length) {
+            st.cur = null;
+            $("proc-q").textContent = "苦手な手順の記録はまだありません";
+            $("proc-body").replaceChildren();
+            $("proc-fb").textContent = "手順の問題で間違えると、ここに出題されます。";
+            $("proc-meta").textContent = "";
+            setButtons({});
+            return;
+          }
+          const cand = p.length > 1 ? p.filter((x) => x.id !== st.last) : p;
+          const it = cand[rnd(cand.length)];
+          st.cur = it;
+          st.last = it.id;
+          st.placed = [];
+          st.done = false;
+          $("proc-meta").textContent = `今回 ${st.correct} / ${st.total} 問正解`;
+          $("proc-q").textContent = it.q;
+          $("proc-body").replaceChildren();
+          $("proc-fb").replaceChildren();
+          setButtons({});
+          if (it.kind === "choice") renderChoice(it);
+          else renderOrder(it);
+        }
+
+        $("proc-undo").addEventListener("click", () => st.undo && st.undo());
+        $("proc-submit").addEventListener("click", () => st.submit && st.submit());
+        $("proc-next").addEventListener("click", next);
+        const setScope = (s) => {
+          st.scope = s;
+          $("proc-scope-all").classList.toggle("active", s === "all");
+          $("proc-scope-weak").classList.toggle("active", s === "weak");
+          st.total = 0;
+          st.correct = 0;
+          next();
+        };
+        $("proc-scope-all").addEventListener("click", () => setScope("all"));
+        $("proc-scope-weak").addEventListener("click", () => setScope("weak"));
+        window.procInit = () => {
+          if (!st.cur && !st.total) next();
+        };
+        window.procItems = PROCS;
+        window.procStartWeak = () => setScope("weak");
+      })();
+    </script>
+    <script>
       // 復習: 学習記録から苦手を見える化し、そこから復習を始める
       (() => {
         const $ = (id) => document.getElementById(id);
@@ -1763,15 +2179,45 @@
           });
         }
 
+        function renderProc() {
+          const box = $("review-proc");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("p:").slice(0, 10);
+          if (!keys.length) {
+            box.textContent = "苦手な手順の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = procItems.find((x) => "p:" + x.id === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const art = document.createElement("span");
+            art.className = "code";
+            art.textContent = item.art;
+            const q = document.createElement("span");
+            q.textContent = item.q;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(art, q, stat);
+            box.appendChild(row);
+          });
+        }
+
         function render() {
           const t = morseStats.totals();
           const weakChars = morseStats.weakKeys("c:").length;
           const weakQ = morseStats.weakKeys("q:").length;
+          const weakP = morseStats.weakKeys("p:").length;
           $("review-summary").textContent = t.n
-            ? `解答 ${t.n} 回、正答率 ${Math.round(((t.n - t.miss) / t.n) * 100)}%。苦手: 文字・記号 ${weakChars} 個、Q符号・略符号 ${weakQ} 個。`
-            : "まだ学習記録がありません。聞き取り・クイズ・照合・木の Check で解答すると、ここに集計されます。";
+            ? `解答 ${t.n} 回、正答率 ${Math.round(((t.n - t.miss) / t.n) * 100)}%。苦手: 文字・記号 ${weakChars} 個、Q符号・略符号 ${weakQ} 個、運用手順 ${weakP} 問。`
+            : "まだ学習記録がありません。聞き取り・クイズ・照合・手順・木の Check で解答すると、ここに集計されます。";
           renderTree();
           renderQ();
+          renderProc();
+          $("review-proc-start").disabled = !weakP;
           $("review-listen").disabled = !weakChars;
           $("review-qcode").disabled = !weakQ;
         }
@@ -1783,6 +2229,10 @@
         $("review-qcode").addEventListener("click", () => {
           showScreen("qcode");
           qcodeStartWeak();
+        });
+        $("review-proc-start").addEventListener("click", () => {
+          showScreen("proc");
+          procStartWeak();
         });
         $("review-clear").addEventListener("click", () => {
           if (confirm("学習記録をすべて消します。よろしいですか?")) {
@@ -1801,6 +2251,20 @@
       if (saved.tone) toneSelect.value = saved.tone;
       wpmSelect.addEventListener("change", () => morseSettings.save({ wpm: wpmSelect.value }));
       toneSelect.addEventListener("change", () => morseSettings.save({ tone: toneSelect.value }));
+      const gapSelect = document.getElementById("gap");
+      if (saved.gap) gapSelect.value = saved.gap;
+      gapSelect.addEventListener("change", () => morseSettings.save({ gap: gapSelect.value }));
+      const rampToggle = document.getElementById("ramp-toggle");
+      const showRamp = () => {
+        const on = !!morseSettings.load().ramp;
+        rampToggle.textContent = on ? "ON" : "OFF";
+        rampToggle.classList.toggle("active", on);
+      };
+      showRamp();
+      rampToggle.addEventListener("click", () => {
+        morseSettings.save({ ramp: !morseSettings.load().ramp });
+        showRamp();
+      });
       let treeSound = saved.sound !== false;
       const soundToggle = document.getElementById("sound-toggle");
       const showSound = () => {
@@ -1827,6 +2291,7 @@
         qcode: "qcode-view",
         listen: "listen-view",
         check: "check-view",
+        proc: "proc-view",
         review: "review-view",
         settings: "settings-view",
       };
@@ -1840,11 +2305,16 @@
         if (name === "qcode") qcodeInit();
         if (name === "listen") listenInit();
         if (name === "check") checkInit();
+        if (name === "proc") procInit();
         if (name === "review") reviewInit();
         requestAnimationFrame(() => relayoutTrees());
         if (name !== "listen") morseAudio.stop();
       }
       screenSelect.addEventListener("change", () => showScreen(screenSelect.value));
+      // オフライン対応: Service Worker を登録する(http/https で開いたときだけ)
+      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+      }
       // 前回開いていた画面から再開する
       if (saved.screen && screens[saved.screen] && saved.screen !== "alphabet") showScreen(saved.screen);
     </script>
