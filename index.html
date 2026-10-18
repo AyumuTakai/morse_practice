@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Morse Code Practice</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="モールス" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <style>
       * {
         box-sizing: border-box;
@@ -132,6 +137,17 @@
       [hidden] {
         display: none !important;
       }
+      header nav select {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.3em 0.6em;
+        margin: 0;
+        border: 1px solid white;
+        border-radius: 0.5em;
+        background-color: white;
+        color: lightslategray;
+        cursor: pointer;
+      }
       header {
         display: flex;
         flex-wrap: wrap;
@@ -140,15 +156,259 @@
         gap: 0.2em 0.5em;
         padding: 0.2em 1em;
       }
-      header nav button {
+      #check-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #check-view button {
         height: auto;
-        font-size: 0.9rem;
-        padding: 0.1em 1em;
-        margin-left: 0.3em;
-        border: 1px solid white;
-        background: transparent;
-        color: white;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
         cursor: pointer;
+      }
+      #check-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #check-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 0.4em 1em;
+      }
+      #check-view .q {
+        padding: 0.8em 0;
+        border-bottom: 1px solid #e3e8ee;
+      }
+      #check-view .q:last-child {
+        border-bottom: 0;
+      }
+      #check-view .label {
+        font-weight: bold;
+        margin-right: 0.5em;
+      }
+      #check-view .word {
+        font-family: monospace;
+        font-size: 1.4rem;
+        letter-spacing: 0.15em;
+      }
+      #check-view .morse,
+      #check-view .cols {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3em 0.9em;
+        margin: 0.4em 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.1em;
+      }
+      #check-view .cols .col {
+        text-align: center;
+        padding: 0 0.3em;
+        border-radius: 0.4em;
+      }
+      #check-view .cols .col .ch {
+        display: block;
+        font-family: monospace;
+        font-weight: bold;
+        letter-spacing: 0;
+      }
+      #check-view .cols .col.bad {
+        background-color: #ffe0d6;
+      }
+      #check-view .choices button {
+        border-radius: 0.8em;
+        margin-bottom: 0.2em;
+      }
+      #check-view .choices button.picked {
+        background-color: lightslategray;
+        color: white;
+      }
+      #check-view .mark {
+        font-weight: bold;
+      }
+      #check-view .mark.ok {
+        color: #1a8f5a;
+      }
+      #check-view .mark.ng {
+        color: #c0392b;
+      }
+      #check-view .fb {
+        font-size: 0.9rem;
+        color: #444;
+      }
+      #check-view .score {
+        font-size: 1.2rem;
+        margin: 0.5em 0;
+      }
+      #check-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      #proc-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #proc-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #proc-view button.active {
+        background-color: lightslategray;
+        color: white;
+      }
+      #proc-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 1em;
+      }
+      #proc-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      #proc-view .prompt {
+        font-size: 1.15rem;
+        margin: 0.4em 0 0.8em;
+      }
+      #proc-view .choices {
+        display: grid;
+        gap: 0.5em;
+      }
+      #proc-view .choices button,
+      #proc-view .chips button {
+        border-radius: 0.8em;
+        text-align: left;
+        background: white;
+        margin: 0;
+      }
+      #proc-view .choices button.correct,
+      #proc-view .placed li.ok {
+        background-color: aquamarine;
+      }
+      #proc-view .choices button.incorrect,
+      #proc-view .placed li.ng {
+        background-color: coral;
+      }
+      #proc-view .chips {
+        display: grid;
+        gap: 0.5em;
+        margin-top: 0.8em;
+      }
+      #proc-view .chips button:disabled {
+        display: none; /* 並べたものは隠す(1つ戻すと再び現れる) */
+      }
+      #proc-view .placed {
+        margin: 0;
+        padding-left: 1.6em;
+        min-height: 2em;
+      }
+      #proc-view .placed li {
+        padding: 0.4em 0.6em;
+        margin-bottom: 0.3em;
+        border: 1px solid #ccc;
+        border-radius: 0.6em;
+      }
+      #proc-view .fb {
+        margin: 0.8em 0;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+      #proc-view .fb .art {
+        font-weight: bold;
+      }
+      #review-view {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 1em;
+      }
+      #review-view h2 {
+        font-size: 1.05rem;
+        margin: 1.2em 0 0.4em;
+      }
+      #review-view button {
+        height: auto;
+        font-size: 1rem;
+        padding: 0.6em 1em;
+        margin: 0.5em 0.3em 0.5em 0;
+        border-radius: 2em;
+        border: 1px solid lightslategray;
+        background-color: transparent;
+        cursor: pointer;
+      }
+      #review-view .card {
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 1em;
+        padding: 0.8em 1em;
+      }
+      #review-view .note {
+        font-size: 0.85rem;
+        color: #555;
+      }
+      #review-view .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3em 1em;
+        font-size: 0.85rem;
+      }
+      #review-view .legend .sw {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        margin-right: 0.3em;
+        vertical-align: -0.15em;
+        border: 1px solid #888;
+        border-radius: 0.3em;
+      }
+      #review-view .tree.readonly input {
+        cursor: default;
+      }
+      #review-view .heat-none {
+        background-color: white !important;
+      }
+      #review-view .heat0 {
+        background-color: #c9f2dc !important;
+      }
+      #review-view .heat1 {
+        background-color: #fff2a8 !important;
+      }
+      #review-view .heat2 {
+        background-color: #ffc78a !important;
+      }
+      #review-view .heat3 {
+        background-color: #ff9d8f !important;
+      }
+      #review-view .qrow {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.1em 0.8em;
+        padding: 0.5em 0;
+        border-bottom: 1px solid #e3e8ee;
+      }
+      #review-view .qrow .code {
+        font-weight: bold;
+        font-family: monospace;
+      }
+      #review-view .qrow .meaning,
+      #review-view .qrow .stat {
+        grid-column: 1 / 3;
+        font-size: 0.9rem;
+      }
+      #review-view .qrow .stat {
+        color: #666;
+        font-size: 0.8rem;
       }
       #settings-view {
         max-width: 720px;
@@ -288,23 +548,20 @@
       .tree .sym {
         background-color: lightyellow;
       }
-      header nav button.active {
-        background: white;
-        color: lightslategray;
-      }
       @media (max-width: 600px) {
         h1 {
-          font-size: 1.1rem;
+          font-size: 1rem;
         }
-        header nav button {
-          font-size: 0.8rem;
-          padding: 0.2em 0.6em;
-          margin-left: 0.2em;
+        header {
+          padding: 0.3em 0.8em;
         }
         #qcode-view {
           padding: 0.5em;
         }
-        #listen-view {
+        #listen-view,
+        #check-view,
+        #proc-view,
+        #review-view {
           padding: 0.5em;
         }
         /* 下部の Reset / Show / Check */
@@ -384,10 +641,15 @@
     <header>
       <h1>Morse Code Practice</h1>
       <nav>
-        <button id="tab-alphabet" class="active">アルファベット</button>
-        <button id="tab-qcode">Q符号</button>
-        <button id="tab-listen">聞き取り</button>
-        <button id="tab-settings">設定</button>
+        <select id="screen-select" aria-label="画面の切り替え">
+          <option value="alphabet">アルファベット</option>
+          <option value="qcode">Q符号</option>
+          <option value="listen">聞き取り</option>
+          <option value="check">照合</option>
+          <option value="proc">手順</option>
+          <option value="review">復習</option>
+          <option value="settings">設定</option>
+        </select>
       </nav>
     </header>
     <script>
@@ -395,19 +657,73 @@
       window.morseAudio = (() => {
         let ctx = null;
         let osc = null;
+        let token = 0; // 再生のたびに増やし、古い予約を無効にする
+        let silentAudio = null;
+        const getCtx = () => {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          ctx = ctx || new Ctx();
+          return ctx;
+        };
+        // iPhone では、サイレントスイッチ(消音)がオンだと Web Audio は鳴らない。
+        // 「再生」扱いに切り替える(iOS 16.4 以降は audioSession、それ未満は無音の <audio> を再生)
+        function allowSilentSwitch() {
+          try {
+            if (navigator.audioSession) {
+              navigator.audioSession.type = "playback";
+              return;
+            }
+          } catch (e) {}
+          if (silentAudio) return;
+          try {
+            const n = 800;
+            const buf = new ArrayBuffer(44 + n);
+            const v = new DataView(buf);
+            const w = (o, str) => [...str].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+            w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt ");
+            v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+            w(36, "data"); v.setUint32(40, n, true);
+            for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+            silentAudio = new Audio(URL.createObjectURL(new Blob([buf], { type: "audio/wav" })));
+            silentAudio.loop = true;
+            silentAudio.setAttribute("playsinline", "");
+            silentAudio.play().catch(() => (silentAudio = null));
+          } catch (e) {}
+        }
+        // 最初のタップ・キー操作の中で音声を有効化する(iOS はユーザー操作の中でないと音を出せない)
+        function unlock() {
+          const c = getCtx();
+          if (!c) return;
+          allowSilentSwitch();
+          if (c.state !== "running") c.resume();
+          try {
+            const src = c.createBufferSource();
+            src.buffer = c.createBuffer(1, 1, 22050);
+            src.connect(c.destination);
+            src.start(0);
+          } catch (e) {}
+          if (c.state === "running") {
+            ["touchend", "pointerdown", "click", "keydown"].forEach((ev) =>
+              document.removeEventListener(ev, unlock, true)
+            );
+          }
+        }
+        ["touchend", "pointerdown", "click", "keydown"].forEach((ev) =>
+          document.addEventListener(ev, unlock, { capture: true, passive: true })
+        );
         const stop = () => {
+          token++;
           if (osc) {
             try { osc.stop(); } catch (e) {}
             osc = null;
           }
         };
-        function play(code) {
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          if (!Ctx) return;
-          ctx = ctx || new Ctx();
-          if (ctx.state === "suspended") ctx.resume();
-          stop();
-          const unit = 1.2 / Number(document.getElementById("wpm").value);
+        function schedule(code, opts) {
+          // 速度(WPM)は引数があればそれを、なければ設定の値を使う。gap は文字と文字の間隔の倍率
+          const wpm = (opts && opts.wpm) || Number(document.getElementById("wpm").value);
+          const gap = (opts && opts.gap) || Number(document.getElementById("gap").value) || 1;
+          const unit = 1.2 / wpm;
           const o = ctx.createOscillator();
           const g = ctx.createGain();
           o.frequency.value = Number(document.getElementById("tone").value);
@@ -426,7 +742,7 @@
           symbols.forEach((s, i) => {
             if (s === ".") on(unit);
             else if (s === "-") on(unit * 3);
-            else if (s === " ") { t += unit * 2; return; } // 直前の符号間1単位と合わせて文字間3単位
+            else if (s === " ") { t += unit * (3 * gap - 1); return; } // 直前の符号間1単位と合わせて文字間3単位(×倍率)
             const next = symbols[i + 1];
             if (next === "." || next === "-") t += unit;
             else if (next === " ") t += unit;
@@ -435,17 +751,75 @@
           o.stop(t + 0.05);
           osc = o;
         }
+        function play(code, opts) {
+          const c = getCtx();
+          if (!c) return;
+          stop();
+          const mine = token;
+          allowSilentSwitch();
+          // 起動(resume)が終わってから予約する。起動前は時計が進まず、予約した音が間に合わなくなる
+          if (c.state === "running") schedule(code, opts);
+          else c.resume().then(() => mine === token && schedule(code, opts)).catch(() => {});
+        }
         return { play, stop };
       })();
       // 設定の保存(端末内のみ)
+      let settingsMem = null;
       window.morseSettings = {
         load() {
-          try { return JSON.parse(localStorage.getItem("morse-settings")) || {}; } catch (e) { return {}; }
+          if (!settingsMem) {
+            try { settingsMem = JSON.parse(localStorage.getItem("morse-settings")) || {}; } catch (e) { settingsMem = {}; }
+          }
+          return settingsMem;
         },
         save(patch) {
-          try { localStorage.setItem("morse-settings", JSON.stringify({ ...this.load(), ...patch })); } catch (e) {}
+          settingsMem = { ...this.load(), ...patch };
+          try { localStorage.setItem("morse-settings", JSON.stringify(settingsMem)); } catch (e) {}
         },
       };
+    </script>
+    <script>
+      // 学習記録(端末内のみ)。キー: "c:A"(文字・記号)、"q:QSY"(Q符号・略符号)
+      // 直近5回の結果を残し、その中の誤答数で「苦手」を判定する(5回続けて正解すれば苦手から外れる)
+      window.morseStats = (() => {
+        const KEY = "morse-stats";
+        const WINDOW = 5;
+        const load = () => {
+          try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+        };
+        let data = load();
+        const save = () => {
+          try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+        };
+        const weakness = (key) => (data[key] ? [...data[key].recent].filter((c) => c === "x").length : -1);
+        return {
+          record(key, ok) {
+            const s = data[key] || { n: 0, miss: 0, recent: "" };
+            s.n++;
+            if (!ok) s.miss++;
+            s.recent = (s.recent + (ok ? "o" : "x")).slice(-WINDOW);
+            data[key] = s;
+            save();
+          },
+          get: (key) => data[key] || null,
+          // 直近の誤答数(0〜5)。記録がなければ -1
+          weakness,
+          // 苦手(直近に誤答がある)なキーを、誤答の多い順に返す
+          weakKeys(prefix) {
+            return Object.keys(data)
+              .filter((k) => k.startsWith(prefix) && weakness(k) > 0)
+              .sort((a, b) => weakness(b) - weakness(a) || data[b].miss / data[b].n - data[a].miss / data[a].n);
+          },
+          totals() {
+            const v = Object.values(data);
+            return { items: v.length, n: v.reduce((a, s) => a + s.n, 0), miss: v.reduce((a, s) => a + s.miss, 0) };
+          },
+          clear() {
+            data = {};
+            save();
+          },
+        };
+      })();
     </script>
     <div id="alphabet-view">
       <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree" data-fit="1"></div></div>
@@ -580,12 +954,12 @@
         const svg = document.createElementNS(NS, "svg");
         svg.setAttribute("viewBox", `0 0 ${Wt} ${Ht}`);
         svg.setAttribute("class", "tree-lines");
-        const root = { x: Wt / 2, y: Ht - h / 2 };
         Object.entries(nodes).forEach(([code, n]) => {
-          // 親が木の中に無い符号(記号など)は線を引かない
+          // 線は遷移できる親子の間だけ。E と T は根(開始位置)から始まるので線は引かない。
+          // 親が木の中に無い符号(記号など)も引かない
           const parent = code.slice(0, -1);
-          if (parent && !nodes[parent]) return;
-          const from = parent ? nodes[parent] : root;
+          if (!parent || !nodes[parent]) return;
+          const from = nodes[parent];
           const line = document.createElementNS(NS, "line");
           line.setAttribute("x1", from.x);
           line.setAttribute("y1", from.y);
@@ -626,11 +1000,18 @@
         <button id="range-alpha" class="active">英字</button>
         <button id="range-alnum">英字+数字</button>
         <button id="range-all">すべて(記号を含む)</button>
+        <button id="range-weak">苦手</button>
         <button id="listen-tree-toggle" class="active">木を見る: ON</button>
+      </div>
+      <div class="toolbar">
+        <button id="group-1" class="active">1文字</button>
+        <button id="group-3">3文字</button>
+        <button id="group-5">5文字</button>
       </div>
       <div class="card">
         <div class="note" id="listen-score"></div>
         <div class="big" id="listen-result">♪</div>
+        <div class="note" id="listen-given"></div>
         <div id="listen-input-box"></div>
         <div style="margin-top: 0.8em">
           <button id="listen-replay">▶ 再生</button>
@@ -642,9 +1023,68 @@
       </div>
       <div class="tree-wrap" id="listen-tree-wrap"><div class="tree readonly" id="listen-tree"></div></div>
       <p class="note">
-        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度と音程は上のバーで変えられます。
+        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度・音程・文字の間隔・自動加速は「設定」で変えられます。
         大文字・小文字は区別しません。
       </p>
+    </div>
+    <div id="check-view" hidden>
+      <div class="toolbar">
+        <button id="check-kind-10" class="active">英字10文字</button>
+        <button id="check-kind-6">英字5文字+数字</button>
+      </div>
+      <p class="note">
+        字句とモールス符号の組合せが、無線局運用規則 別表第1号に適合するか(1)、しないか(2)を答えます。
+        5問のうち誤りはちょうど2問です。
+      </p>
+      <div class="card" id="check-list"></div>
+      <div class="score" id="check-score"></div>
+      <div>
+        <button id="check-submit">答え合わせ</button>
+        <button id="check-next" hidden>次の5問</button>
+      </div>
+    </div>
+    <div id="proc-view" hidden>
+      <div class="toolbar">
+        <button id="proc-scope-all" class="active">すべて</button>
+        <button id="proc-scope-weak">苦手</button>
+      </div>
+      <div class="card">
+        <div class="note" id="proc-meta"></div>
+        <div class="prompt" id="proc-q"></div>
+        <div id="proc-body"></div>
+        <div class="fb" id="proc-fb"></div>
+        <div class="actions">
+          <button id="proc-undo" hidden>1つ戻す</button>
+          <button id="proc-submit" hidden>答え合わせ</button>
+          <button id="proc-next" hidden>次へ</button>
+        </div>
+      </div>
+      <p class="note">
+        無線局運用規則(第20〜39条、第131〜135条)の手順の問題です。条文の番号は解答後に表示します。
+        試験では、手順の中の符号・回数・時間が空欄になって出題されます。
+      </p>
+    </div>
+    <div id="review-view" hidden>
+      <div class="card" id="review-summary"></div>
+      <h2>文字・記号の苦手(直近5回)</h2>
+      <div class="legend">
+        <span><i class="sw heat-none"></i>記録なし</span>
+        <span><i class="sw heat0"></i>得意</span>
+        <span><i class="sw heat1"></i>誤り1</span>
+        <span><i class="sw heat2"></i>誤り2</span>
+        <span><i class="sw heat3"></i>誤り3以上</span>
+      </div>
+      <div class="tree-wrap" id="review-tree-wrap"><div class="tree readonly" id="review-tree"></div></div>
+      <div><button id="review-listen">苦手な文字を聞き取り</button></div>
+      <h2>Q符号・略符号の苦手</h2>
+      <div id="review-q"></div>
+      <div><button id="review-qcode">苦手なQ符号をクイズで出題</button></div>
+      <h2>運用手順の苦手</h2>
+      <div id="review-proc"></div>
+      <div><button id="review-proc-start">苦手な手順を出題</button></div>
+      <h2>記録</h2>
+      <p class="note">記録はこの端末のブラウザにだけ保存されています。</p>
+      <div><button id="review-clear">記録を消す</button></div>
     </div>
     <div id="settings-view" hidden>
       <div class="row">
@@ -670,6 +1110,20 @@
           <option value="800">800</option>
         </select>
         <span>Hz</span>
+      </div>
+      <div class="row">
+        <label for="gap">文字の間隔</label>
+        <select id="gap">
+          <option value="1" selected>標準</option>
+          <option value="2">2倍</option>
+          <option value="3">3倍</option>
+        </select>
+        <span class="note">文字は標準の速さのまま、文字と文字の間だけを広げます(ファーンズワース方式)。</span>
+      </div>
+      <div class="row">
+        <label>自動加速</label>
+        <button id="ramp-toggle">OFF</button>
+        <span class="note">聞き取りで5問続けて正解するたびに、速度を1 WPM 上げます(上限30 WPM)。</span>
       </div>
       <div class="row">
         <label>サウンド</label>
@@ -746,13 +1200,16 @@
       });
       checkButton.addEventListener("click", () => {
         inputs.forEach((input) => {
-          if (input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt) {
+          const ok = input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt;
+          if (ok) {
             input.classList.add("correct");
             input.classList.remove("incorrect");
           } else {
             input.classList.add("incorrect");
             input.classList.remove("correct");
           }
+          // 入力のあった文字・記号だけを学習記録に残す(空欄は未挑戦として数えない)
+          if (input.dataset.char && input.value !== "") morseStats.record("c:" + input.dataset.char, ok);
         });
       });
       resetButton.addEventListener("click", () => {
@@ -900,7 +1357,7 @@
         $("show-all").addEventListener("click", () => setHidden("td:not(.play)", false));
 
         // ---- クイズ ----
-        const quiz = { mode: "code", examOnly: true, queue: [], index: 0, correct: 0, missed: [], answered: false };
+        const quiz = { mode: "code", scope: "exam", queue: [], index: 0, correct: 0, missed: [], answered: false };
 
         const shuffle = (arr) => {
           const a = [...arr];
@@ -911,9 +1368,28 @@
           return a;
         };
 
-        const pool = () => QCODES.filter((x) => !quiz.examOnly || x.x);
+        const SCOPES = {
+          exam: "範囲: 過去問に出たもの",
+          all: "範囲: すべて",
+          weak: "範囲: 苦手(学習記録から)",
+        };
+        // 苦手: 直近に誤答のある符号(誤答の多い順)
+        const weakItems = () =>
+          morseStats.weakKeys("q:").map((k) => QCODES.find((x) => "q:" + x.c === k)).filter(Boolean);
+        const pool = () =>
+          quiz.scope === "exam" ? QCODES.filter((x) => x.x) : quiz.scope === "weak" ? weakItems() : QCODES;
 
         function startQuiz(items = pool()) {
+          if (!items.length) {
+            quiz.queue = [];
+            $("prompt").textContent = "苦手な符号の記録はまだありません";
+            $("choices").replaceChildren();
+            $("detail").textContent = "クイズで間違えた符号が、ここに出題されます。";
+            $("score").textContent = "";
+            $("next").hidden = true;
+            $("replay").hidden = true;
+            return;
+          }
           quiz.queue = shuffle(items);
           quiz.index = 0;
           quiz.correct = 0;
@@ -931,7 +1407,7 @@
         }
 
         function distractors(item) {
-          const cand = (quiz.examOnly ? pool() : QCODES).filter((x) => x !== item);
+          const cand = (quiz.scope === "exam" ? pool() : QCODES).filter((x) => x !== item);
           // 同じ分類・同じ先頭2文字の符号ほど紛らわしい選択肢として優先する
           const prefix = (x) => x.c.slice(0, 2) === item.c.slice(0, 2);
           const rank = (x) => (x.g === item.g ? 0 : 2) + (prefix(x) ? 0 : 1);
@@ -970,6 +1446,7 @@
         function answer(btn, isCorrect, item) {
           if (quiz.answered) return;
           quiz.answered = true;
+          morseStats.record("q:" + item.c, isCorrect);
           btn.classList.add(isCorrect ? "correct" : "incorrect");
           if (isCorrect) {
             quiz.correct++;
@@ -1002,10 +1479,14 @@
         $("retry-missed").addEventListener("click", () => {
           if (quiz.missed.length) startQuiz(quiz.missed);
         });
-        $("scope").addEventListener("click", () => {
-          quiz.examOnly = !quiz.examOnly;
-          $("scope").textContent = quiz.examOnly ? "範囲: 過去問に出たもの" : "範囲: すべて";
+        const setScope = (scope) => {
+          quiz.scope = scope;
+          $("scope").textContent = SCOPES[scope];
           startQuiz();
+        };
+        $("scope").addEventListener("click", () => {
+          const order = Object.keys(SCOPES);
+          setScope(order[(order.indexOf(quiz.scope) + 1) % order.length]);
         });
         function setMode(mode) {
           quiz.mode = mode;
@@ -1034,6 +1515,12 @@
         $("qtab-list").addEventListener("click", () => showQ("list"));
         $("qtab-quiz").addEventListener("click", () => showQ("quiz"));
         window.qcodeInit = () => { if (!quiz.queue.length) startQuiz(); };
+        window.qcodeItems = QCODES;
+        // 復習画面から: 苦手な符号をクイズで出題する
+        window.qcodeStartWeak = () => {
+          setScope("weak");
+          showQ("quiz");
+        };
   })();
     </script>
     <script>
@@ -1046,9 +1533,32 @@
           all: () => true,
         };
         let tree = null;
-        const st = { range: "alpha", current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null };
+        const st = {
+          range: "alpha", group: 1, current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null,
+          speed: null, streak: 0,
+        };
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const rampOn = () => !!morseSettings.load().ramp;
+        // 再生する速度。自動加速がONのときは、正解が続くと上がっていく
+        const listenWpm = () => {
+          const base = Number($("wpm").value);
+          if (!rampOn()) return base;
+          if (!st.speed) st.speed = base;
+          return st.speed;
+        };
+        const play = () => morseAudio.play(st.current[1], { wpm: listenWpm() });
 
-        const pool = () => TREE_CODES.filter(([ch]) => ch !== "" && RANGES[st.range](ch));
+        const weakSet = () => new Set(morseStats.weakKeys("c:").map((k) => k.slice(2)));
+        // 苦手: 直近に誤答のある文字・記号。記録がなければ英字から出題する
+        const pool = () => {
+          if (st.range === "weak") {
+            const w = weakSet();
+            const p = TREE_CODES.filter(([ch]) => ch !== "" && w.has(ch));
+            if (p.length) return p;
+          }
+          const r = st.range === "weak" ? "alpha" : st.range;
+          return TREE_CODES.filter(([ch]) => ch !== "" && RANGES[r](ch));
+        };
 
         function ensureInput() {
           if (st.input) return;
@@ -1066,7 +1576,10 @@
         }
 
         function score() {
-          $("listen-score").textContent = `正解 ${st.correct} / ${st.total}`;
+          $("listen-score").textContent =
+            `正解 ${st.correct} / ${st.total}` +
+            (rampOn() ? `  速度 ${listenWpm()} WPM(自動加速)` : "") +
+            (st.range === "weak" && !weakSet().size ? "  ※苦手の記録がないため英字から出題" : "");
           $("listen-missed").textContent = st.missed.size ? "間違えた文字: " + [...st.missed].join(" ") : "";
         }
 
@@ -1082,12 +1595,17 @@
           });
         }
         const wrap = () => $("listen-tree-wrap");
-        const mark = (ch) => {
+        // 答えの文字(群なら複数)の木のマスを光らせる
+        const mark = (chars) => {
+          let scrolled = false;
           tree.querySelectorAll("input").forEach((el) => {
-            const hit = ch !== null && el.dataset.char === ch;
+            const hit = chars !== null && el.dataset.char !== "" && chars.includes(el.dataset.char);
             el.classList.toggle("hit", hit);
-            // 答えのマスが画面外なら横スクロールで見える位置へ
-            if (hit) wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+            // 最初の答えのマスが画面外なら、横スクロールで見える位置へ
+            if (hit && !scrolled) {
+              scrolled = true;
+              wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+            }
           });
         };
 
@@ -1095,10 +1613,20 @@
           ensureInput();
           ensureTree();
           mark(null);
-          const choices = pool().filter(([ch]) => ch !== st.last);
-          st.current = choices[Math.floor(Math.random() * choices.length)];
+          if (!rampOn()) st.speed = null;
+          const p = pool();
+          // 1文字のときは直前と同じ文字を避ける。群のときは、各文字を無作為に選ぶ
+          const picks = [];
+          for (let i = 0; i < st.group; i++) {
+            const c = p.filter(([ch]) => st.group > 1 || p.length < 2 || ch !== st.last);
+            picks.push(c[rnd(c.length)]);
+          }
+          st.current = [picks.map((x) => x[0]).join(""), picks.map((x) => x[1]).join(" "), picks.map((x) => x[0])];
           st.last = st.current[0];
           st.done = false;
+          st.input.maxLength = st.group;
+          st.input.style.width = `${Math.max(4, st.group * 1.3 + 1.5)}em`;
+          $("listen-given").textContent = "";
           st.input.value = "";
           st.input.classList.remove("correct", "incorrect");
           $("listen-result").textContent = "♪";
@@ -1109,16 +1637,32 @@
           st.input.focus();
         }
 
-        function finish(isCorrect, given) {
-          const [ch, code] = st.current;
+        function finish(given) {
+          const [str, code, chars] = st.current;
+          const g = given.toUpperCase();
+          const isCorrect = g === str;
           st.done = true;
           st.total++;
+          // 文字ごとに、その位置で合っていたかを学習記録に残す
+          chars.forEach((c, i) => {
+            const ok = g[i] === c;
+            morseStats.record("c:" + c, ok);
+            if (!ok) st.missed.add(c);
+          });
           if (isCorrect) st.correct++;
-          else st.missed.add(ch);
+          // 自動加速: 5問続けて正解したら 1 WPM 上げる(上限30)
+          if (isCorrect) {
+            st.streak++;
+            if (rampOn() && st.streak >= 5) {
+              st.speed = Math.min(30, listenWpm() + 1);
+              st.streak = 0;
+            }
+          } else st.streak = 0;
           st.input.classList.add(isCorrect ? "correct" : "incorrect");
-          mark(ch);
+          mark(chars);
           const dd = code.replace(/\./g, "・").replace(/-/g, "－");
-          $("listen-result").textContent = (isCorrect ? "正解! " : given ? "不正解… " : "") + `${ch}  ${dd}`;
+          $("listen-result").textContent = (isCorrect ? "正解! " : g ? "不正解… " : "") + `${str}  ${dd}`;
+          $("listen-given").textContent = !isCorrect && g ? `あなたの答え: ${g}` : "";
           $("listen-answer").hidden = true;
           $("listen-giveup").hidden = true;
           $("listen-next").hidden = false;
@@ -1129,26 +1673,40 @@
         function submit() {
           const given = st.input.value.trim();
           if (!given || st.done) return;
-          finish(given.toUpperCase() === st.current[0], given);
+          finish(given);
         }
 
         $("listen-answer").addEventListener("click", submit);
-        $("listen-giveup").addEventListener("click", () => !st.done && finish(false, ""));
+        $("listen-giveup").addEventListener("click", () => !st.done && finish(""));
         $("listen-next").addEventListener("click", next);
         $("listen-replay").addEventListener("click", () => {
-          if (st.current) morseAudio.play(st.current[1]);
+          if (st.current) play();
           if (st.input && !st.done) st.input.focus();
         });
-        ["alpha", "alnum", "all"].forEach((r) =>
-          $("range-" + r).addEventListener("click", () => {
-            st.range = r;
-            ["alpha", "alnum", "all"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
-            st.total = 0;
-            st.correct = 0;
-            st.missed.clear();
-            next();
-          })
-        );
+        const setRange = (r) => {
+          st.range = r;
+          ["alpha", "alnum", "all", "weak"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
+          st.total = 0;
+          st.correct = 0;
+          st.missed.clear();
+          next();
+        };
+        ["alpha", "alnum", "all", "weak"].forEach((r) => $("range-" + r).addEventListener("click", () => setRange(r)));
+        const setGroup = (n) => {
+          st.group = n;
+          [1, 3, 5].forEach((x) => $("group-" + x).classList.toggle("active", x === n));
+          st.total = 0;
+          st.correct = 0;
+          st.streak = 0;
+          st.missed.clear();
+          next();
+        };
+        [1, 3, 5].forEach((n) => $("group-" + n).addEventListener("click", () => setGroup(n)));
+        // 復習画面から: 苦手な文字を聞き取りで出題する
+        window.listenStartWeak = () => {
+          ensureInput();
+          setRange("weak");
+        };
         $("listen-tree-toggle").addEventListener("click", (e) => {
           const hide = !wrap().hidden;
           wrap().hidden = hide;
@@ -1168,6 +1726,524 @@
       })();
     </script>
     <script>
+      // 字句照合: 過去問の B 問題と同じ形式(字句とモールス符号の組合せが適合するか)
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const CODE = {};
+        TREE_CODES.forEach(([ch, code]) => {
+          if (/^[A-Z0-9]$/.test(ch)) CODE[ch] = code;
+        });
+        const LETTERS = Object.keys(CODE).filter((c) => /[A-Z]/.test(c));
+        const DIGITS = Object.keys(CODE).filter((c) => /[0-9]/.test(c));
+        const fmt = (code) => code.replace(/\./g, "・").replace(/-/g, "－");
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const pick = (a) => a[rnd(a.length)];
+        const KIND = { 10: { letters: 10, digit: false }, 6: { letters: 5, digit: true } };
+        const NAMES = ["ア", "イ", "ウ", "エ", "オ"];
+        // 符号の編集距離(1つ違いほど紛らわしい)
+        const lev = (a, b) => {
+          const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+          for (let j = 1; j <= b.length; j++) d[0][j] = j;
+          for (let i = 1; i <= a.length; i++)
+            for (let j = 1; j <= b.length; j++)
+              d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+          return d[a.length][b.length];
+        };
+        const st = { kind: 10, items: [], submitted: false };
+
+        function makeItem(kind, wrong) {
+          const k = KIND[kind];
+          const chars = Array.from({ length: k.letters }, () => pick(LETTERS));
+          if (k.digit) chars.push(pick(DIGITS));
+          const shown = [...chars]; // 符号として表示する文字(誤りの問題では一部が違う)
+          let fault = null;
+          if (wrong) {
+            const swaps = [];
+            for (let i = 0; i + 1 < k.letters; i++) if (chars[i] !== chars[i + 1]) swaps.push(i);
+            if (swaps.length && Math.random() < 0.3) {
+              // 隣り合う2文字の符号が入れ替わっている
+              const i = pick(swaps);
+              [shown[i], shown[i + 1]] = [shown[i + 1], shown[i]];
+              fault = { type: "swap", i };
+            } else {
+              // 似た符号の別の文字に取り違えている(1つ違いを優先)
+              const i = rnd(chars.length);
+              const pool = (/[0-9]/.test(chars[i]) ? DIGITS : LETTERS).filter((c) => c !== chars[i]);
+              const d1 = pool.filter((c) => lev(CODE[c], CODE[chars[i]]) === 1);
+              const d2 = pool.filter((c) => lev(CODE[c], CODE[chars[i]]) <= 2);
+              shown[i] = pick(Math.random() < 0.5 && d1.length ? d1 : d2.length ? d2 : pool);
+              fault = { type: "sub", i };
+            }
+          }
+          return { chars, shown, fault, answer: null };
+        }
+
+        function newSet() {
+          // 5問のうち誤りはちょうど2問(過去問と同じ)
+          const wrong = new Set();
+          while (wrong.size < 2) wrong.add(rnd(5));
+          st.items = Array.from({ length: 5 }, (_, n) => makeItem(st.kind, wrong.has(n)));
+          st.submitted = false;
+          $("check-next").hidden = true;
+          $("check-submit").hidden = false;
+          $("check-score").textContent = "";
+          render();
+        }
+
+        function render() {
+          const list = $("check-list");
+          list.replaceChildren();
+          st.items.forEach((it, n) => {
+            const q = document.createElement("div");
+            q.className = "q";
+            const word = document.createElement("div");
+            const label = document.createElement("span");
+            label.className = "label";
+            label.textContent = NAMES[n];
+            const w = document.createElement("span");
+            w.className = "word";
+            w.textContent = it.chars.join("");
+            word.append(label, w);
+            q.appendChild(word);
+
+            if (!st.submitted) {
+              // 解答前は符号だけを並べる(試験と同じ)
+              const m = document.createElement("div");
+              m.className = "morse";
+              it.shown.forEach((c) => {
+                const s = document.createElement("span");
+                s.textContent = fmt(CODE[c]);
+                m.appendChild(s);
+              });
+              q.appendChild(m);
+            } else {
+              // 解答後は、文字と符号を対応させて見せる
+              const cols = document.createElement("div");
+              cols.className = "cols";
+              const bad = it.fault ? (it.fault.type === "swap" ? [it.fault.i, it.fault.i + 1] : [it.fault.i]) : [];
+              it.shown.forEach((c, i) => {
+                const col = document.createElement("span");
+                col.className = "col" + (bad.includes(i) ? " bad" : "");
+                const ch = document.createElement("span");
+                ch.className = "ch";
+                ch.textContent = it.chars[i];
+                col.append(ch, document.createTextNode(fmt(CODE[c])));
+                cols.appendChild(col);
+              });
+              q.appendChild(cols);
+            }
+
+            const choices = document.createElement("div");
+            choices.className = "choices";
+            [[1, "1 適合する"], [2, "2 適合しない"]].forEach(([v, text]) => {
+              const b = document.createElement("button");
+              b.textContent = text;
+              b.disabled = st.submitted;
+              if (it.answer === v) b.classList.add("picked");
+              b.addEventListener("click", () => {
+                it.answer = v;
+                choices.querySelectorAll("button").forEach((x) => x.classList.remove("picked"));
+                b.classList.add("picked");
+              });
+              choices.appendChild(b);
+            });
+            q.appendChild(choices);
+
+            if (st.submitted) {
+              const truth = it.fault ? 2 : 1;
+              const ok = it.answer === truth;
+              const mark = document.createElement("span");
+              mark.className = "mark " + (ok ? "ok" : "ng");
+              mark.textContent = ok ? "○ 正解" : it.answer ? "× 不正解" : "× 未回答";
+              const fb = document.createElement("div");
+              fb.className = "fb";
+              if (!it.fault) fb.textContent = "すべて適合しています。";
+              else if (it.fault.type === "swap") {
+                const a = it.chars[it.fault.i], b = it.chars[it.fault.i + 1];
+                fb.textContent = `「${a}」と「${b}」の符号の順序が入れ替わっています。`;
+              } else {
+                const a = it.chars[it.fault.i], s = it.shown[it.fault.i];
+                fb.textContent = `「${a}」の符号は ${fmt(CODE[a])} ですが、表示されているのは「${s}」の符号 ${fmt(CODE[s])} です。`;
+              }
+              q.append(mark, fb);
+            }
+            list.appendChild(q);
+          });
+        }
+
+        function submit() {
+          st.submitted = true;
+          // 誤りを見抜けたかを、誤りに関わる文字ごとに記録する(見抜けなければ、その文字と取り違えた文字の両方が苦手)
+          st.items.forEach((it) => {
+            if (!it.fault) return;
+            const i = it.fault.i;
+            const chars = it.fault.type === "swap" ? [it.chars[i], it.chars[i + 1]] : [it.chars[i], it.shown[i]];
+            chars.forEach((c) => morseStats.record("c:" + c, it.answer === 2));
+          });
+          const score = st.items.filter((it) => it.answer === (it.fault ? 2 : 1)).length;
+          $("check-score").textContent = `${score} / 5 問正解`;
+          $("check-submit").hidden = true;
+          $("check-next").hidden = false;
+          render();
+          $("check-score").scrollIntoView({ block: "nearest" });
+        }
+
+        $("check-submit").addEventListener("click", submit);
+        $("check-next").addEventListener("click", newSet);
+        [10, 6].forEach((k) =>
+          $("check-kind-" + k).addEventListener("click", () => {
+            st.kind = k;
+            [10, 6].forEach((x) => $("check-kind-" + x).classList.toggle("active", x === k));
+            newSet();
+          })
+        );
+        window.checkInit = () => {
+          if (!st.items.length) newSet();
+        };
+      })();
+    </script>
+    <script>
+      // 運用手順: 無線局運用規則(第20〜39条、第131〜135条)の手順を、選択式と並べ替え式で練習する
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        // kind: choice = 4択 / order = 手順を順に並べる。art は根拠の条文。
+        const PROCS = [
+          { id: "call-self", art: "第20条", kind: "choice", q: "呼出事項のうち、自局の呼出符号を送信する回数は?", a: "3回以下", d: ["1回", "2回以下", "5回以下"],
+            exp: "呼出事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(3回以下)の順に送信します。海上移動業務では、呼出符号は2回以下です。" },
+          { id: "answer-self", art: "第23条", kind: "choice", q: "応答事項のうち、自局の呼出符号を送信する回数は?", a: "1回", d: ["2回以下", "3回以下", "5回以下"],
+            exp: "応答事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(1回)の順です。呼出しと違い、自局の呼出符号は1回です。" },
+          { id: "answer-k", art: "第23条", kind: "choice", q: "応答に際して直ちに通報を受信しようとするとき、応答事項の次に送信する略符号は?", a: "K", d: ["AS", "R", "VA"],
+            exp: "応答事項の次に「K」を送信します。" },
+          { id: "answer-as", art: "第23条", kind: "choice", q: "応答に際して直ちに通報を受信できない事由があるとき、「K」の代わりに送信する略符号は?", a: "AS", d: ["K", "NIL", "BK"],
+            exp: "「K」の代わりに「AS」と、分で表す概略の待つべき時間を送信します。" },
+          { id: "wait-reason", art: "第23条", kind: "choice", q: "概略の待つべき時間が何分以上のとき、その理由を簡単に送信しなければならないか?", a: "10分以上", d: ["5分以上", "15分以上", "30分以上"],
+            exp: "待つべき時間が10分以上のときは、その理由を簡単に送信しなければなりません。" },
+          { id: "msg-ar", art: "第29条", kind: "choice", q: "欧文の通報の送信は、何をもって終わるか?", a: "AR", d: ["K", "VA", "NIL"],
+            exp: "通報は、和文では「ラタ」、欧文では「AR」で終わります。通報の送信は、相手局の呼出符号(1回)、DE(1回)、自局の呼出符号(1回)、通報、K(1回)の順です。" },
+          { id: "long-tx", art: "第30条", kind: "choice", q: "長時間継続して通報を送信するとき、アマチュア局は何分ごとを標準として DE と自局の呼出符号を送信しなければならないか?", a: "10分", d: ["3分", "30分", "60分"],
+            exp: "一般の無線局は30分ごとですが、アマチュア局は10分ごとを標準とします。" },
+          { id: "fix-code", art: "第31条", kind: "choice", q: "欧文の送信中に誤った送信をしたことを知ったとき、前置する符号は?", a: "・・・・・・・・(8連点)", d: ["RPT", "AR(・－・－・)", "VA(・・・－・－)"],
+            exp: "自動機による送信と手送による欧文の送信では、訂正符号(8連点)を前置します。手送による和文では「ラタ」です。" },
+          { id: "fix-from", art: "第31条", kind: "choice", q: "誤送を訂正するとき、訂正符号に続けて、どこから更に送信するか?", a: "正しく送信した適当の語字から", d: ["通報の最初から", "誤った語字から", "通報の末尾から"],
+            exp: "訂正符号を前置して、正しく送信した適当の語字から更に送信します。" },
+          { id: "repeat", art: "第32条", kind: "choice", q: "相手局に通報の反復を求めるとき、送信する略符号は?", a: "RPT", d: ["AR", "BT", "NIL"],
+            exp: "「RPT」の次に、反復する箇所を示します。" },
+          { id: "qsw-34", art: "第34条", kind: "choice", q: "通信中に周波数の変更を要求するとき、「?」を送信するのは、どの符号を送信したときに限るか?", a: "QSW", d: ["QSU", "QSY", "QSX"],
+            exp: "第34条は、(1) QSU又はQSW若しくはQSY(1回)、(2) 変更後の周波数(1回)、(3) ?(「QSW」を送信したときに限る)(1回)の順です。第27条の「QSU」との違いに注意してください。" },
+          { id: "qsu-27", art: "第27条", kind: "choice", q: "呼出し・応答の際に通常通信電波以外の電波を用いるとき、「?」を送信するのは、どの符号を送信したときに限るか?", a: "QSU", d: ["QSW", "QSY", "QSX"],
+            exp: "第27条は、(1) QSW又はQSU(1回)、(2) 用いる電波の周波数(1回)、(3) ?(「QSU」を送信したときに限る)(1回)の順です。第34条の「QSW」と逆なので注意してください。" },
+          { id: "qsx-28", art: "第28条", kind: "choice", q: "電波の変更の通知(第27条)に同意するとき、応答事項の次に送信する符号は?", a: "QSX", d: ["QSY", "QSL", "QSW"],
+            exp: "応答事項の次に、「QSX」(1回)、続いて「K」(直ちに通報を受信しようとする場合に限る)を送信します。" },
+          { id: "accept-35", art: "第35条", kind: "choice", q: "通信中の周波数変更の要求(第34条)に応じるとき、送信する略符号は?", a: "R", d: ["K", "QSX", "VA"],
+            exp: "「R」を送信し(必要なら「QSW」と周波数を続けて送信)、直ちに周波数を変更します。" },
+          { id: "end-msg", art: "第36条", kind: "choice", q: "通報の送信を終了し、他に送信すべき通報がないことを通知するとき、通報に続いて順次送信する符号は?", a: "NIL、K", d: ["K、NIL", "VA、K", "AR、NIL"],
+            exp: "送信した通報に続いて、「NIL」「K」の順に送信します。" },
+          { id: "receipt-r", art: "第37条", kind: "choice", q: "通報を確実に受信したとき(受信証)、DE と呼出符号に続けて送信する略符号は?", a: "R", d: ["K", "VA", "AS"],
+            exp: "受信証は、相手局の呼出符号(1回)、DE(1回)、自局の呼出符号(1回)、R(1回)、最後に受信した通報の番号(1回)の順です。" },
+          { id: "end-comm", art: "第38条", kind: "choice", q: "通信が終了したときに送信する略符号は?(海上移動業務以外では省略できる)", a: "VA", d: ["AR", "NIL", "BT"],
+            exp: "通信が終了したときは「VA」を送信します。" },
+          { id: "test-first", art: "第39条", kind: "choice", q: "無線機器の試験・調整のための電波を発射する前に、最初に送信する符号は?", a: "EX(3回)", d: ["VVV(3回)", "CQ(3回)", "QRT(3回)"],
+            exp: "EX(3回)、DE(1回)、自局の呼出符号(3回)の順に送信し、更に1分間聴守して、他の無線局から停止の請求がない場合に限り、VVV の連続と自局の呼出符号(1回)を送信します。" },
+          { id: "test-listen", art: "第39条", kind: "choice", q: "試験電波の符号(EX、DE、呼出符号)を送信したあと、更に行う聴守の時間は?", a: "1分間", d: ["10秒間", "3分間", "10分間"],
+            exp: "更に1分間聴守して、他の無線局から停止の請求がない場合に限り、VVV の連続と自局の呼出符号を送信します。" },
+          { id: "test-vvv", art: "第39条", kind: "choice", q: "「VVV」の連続と自局の呼出符号の送信は、原則として何秒間をこえてはならないか?", a: "10秒間", d: ["1分間", "30秒間", "3分間"],
+            exp: "10秒間をこえてはなりません。ただし、海上移動業務以外の無線局(アマチュア局など)は、必要があるときは10秒間をこえて送信することができます。" },
+          { id: "emg-oso", art: "第131条", kind: "choice", q: "非常通信で連絡を設定するための呼出し・応答は、呼出事項・応答事項に何を3回前置して行うか?", a: "OSO", d: ["EXZ", "SOS", "CQ"],
+            exp: "呼出事項又は応答事項に「OSO」3回を前置します。" },
+          { id: "emg-cq", art: "第133条", kind: "choice", q: "非常通信で、各局あての一括呼出しを行うとき、「CQ」の前に3回送信する符号は?", a: "OSO", d: ["EXZ", "SOS", "DE"],
+            exp: "「CQ」の前に「OSO」3回を送信します。" },
+          { id: "emg-exz", art: "第135条", kind: "choice", q: "非常通信で通報を送信しようとするとき、欧文の場合に前置する略符号は?", a: "EXZ", d: ["OSO", "SOS", "XXX"],
+            exp: "通報を送信するときは、「ヒゼウ」(欧文では「EXZ」)を前置します。" },
+          { id: "qtc-qru", art: "第24条", kind: "choice", q: "呼出し・応答に際し、相手局に送信すべき通報の有無を知らせるとき、呼出事項・応答事項の次に送信する符号は?", a: "QTC又はQRU", d: ["QSG又はQSL", "QRV又はQRX", "QRM又はQRN"],
+            exp: "「QTC」(通報あり。通数を続けて示せる)又は「QRU」(通報なし)を送信します。" },
+          { id: "qsg", art: "第25条", kind: "choice", q: "通報を連続して送信しようとするとき、相手局の同意を求めるために送信する符号は?", a: "QSG?", d: ["QSL?", "QSM?", "QSP?"],
+            exp: "「QSG?」を送信します。同意するときは「QSG」(必要なら通数を付ける)、拒絶するときは「QSG NO」を送信します。" },
+          { id: "qrz-26", art: "第26条", kind: "choice", q: "自局への呼出しを受信したが、呼出局の呼出符号が不確実なとき、応答事項の相手局の呼出符号の代わりに使う符号は?", a: "QRZ?", d: ["QRA?", "QRL?", "QRU?"],
+            exp: "相手局の呼出符号の代わりに「QRZ?」を使って、直ちに応答します。" },
+
+          { id: "o-call", art: "第20条", kind: "order", q: "呼出しの手順(呼出事項)を、順に並べてください。", steps: ["相手局の呼出符号(3回以下)", "DE(1回)", "自局の呼出符号(3回以下)"],
+            exp: "呼出事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(3回以下)の順です。" },
+          { id: "o-answer", art: "第23条", kind: "order", q: "応答の手順を、順に並べてください(直ちに通報を受信しようとする場合)。", steps: ["相手局の呼出符号(3回以下)", "DE(1回)", "自局の呼出符号(1回)", "K"],
+            exp: "応答事項(相手局の呼出符号、DE、自局の呼出符号)の次に K を送信します。" },
+          { id: "o-msg", art: "第29条", kind: "order", q: "通報の送信の手順を、順に並べてください。", steps: ["相手局の呼出符号(1回)", "DE(1回)", "自局の呼出符号(1回)", "通報(欧文は AR で終わる)", "K(1回)"],
+            exp: "呼出しに使った電波と同一の電波で送信するときは、最初の3つを省略できます。" },
+          { id: "o-receipt", art: "第37条", kind: "order", q: "受信証の手順を、順に並べてください。", steps: ["相手局の呼出符号(1回)", "DE(1回)", "自局の呼出符号(1回)", "R(1回)", "最後に受信した通報の番号(1回)"],
+            exp: "海上移動業務以外では、最初の3つ(呼出符号・DE・呼出符号)を省略できます。" },
+          { id: "o-end", art: "第36条", kind: "order", q: "通報の送信を終え、他に送信する通報がないことを通知する手順を、順に並べてください。", steps: ["NIL", "K"],
+            exp: "送信した通報に続けて、NIL、K の順に送信します。" },
+          { id: "o-test", art: "第39条", kind: "order", q: "試験電波を発射するときの手順を、順に並べてください(発射前の聴守は済んでいるものとします)。", steps: ["EX(3回)", "DE(1回)", "自局の呼出符号(3回)", "1分間の聴守", "VVV の連続と自局の呼出符号(1回)"],
+            exp: "停止の請求がない場合に限り、最後に VVV の連続と自局の呼出符号を送信します。" },
+          { id: "o-freq34", art: "第34条", kind: "order", q: "通信中に周波数の変更を要求する手順を、順に並べてください(QSW を送信する場合)。", steps: ["QSU又はQSW若しくはQSY(1回)", "変更後の周波数(1回)", "?(QSWを送信したときに限る)(1回)"],
+            exp: "周波数があらかじめ定められているときは、(2)の周波数の送信を省略できます。" },
+          { id: "o-freq27", art: "第27条", kind: "order", q: "呼出し・応答の際に電波を変更する通知の手順を、順に並べてください(QSU を送信する場合)。", steps: ["呼出事項又は応答事項", "QSW又はQSU(1回)", "用いる電波の周波数(1回)", "?(QSUを送信したときに限る)(1回)"],
+            exp: "周波数があらかじめ定められているときは、周波数の送信を省略できます。" },
+        ];
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const shuffle = (arr) => {
+          const a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = rnd(i + 1);
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        };
+        const st = { scope: "all", cur: null, last: null, placed: [], done: false, total: 0, correct: 0 };
+        const weakItems = () =>
+          morseStats.weakKeys("p:").map((k) => PROCS.find((x) => "p:" + x.id === k)).filter(Boolean);
+        const pool = () => (st.scope === "weak" ? weakItems() : PROCS);
+
+        function setButtons({ undo = false, submit = false, next = false }) {
+          $("proc-undo").hidden = !undo;
+          $("proc-submit").hidden = !submit;
+          $("proc-next").hidden = !next;
+        }
+
+        function finish(ok) {
+          const it = st.cur;
+          st.done = true;
+          st.total++;
+          if (ok) st.correct++;
+          morseStats.record("p:" + it.id, ok);
+          $("proc-fb").replaceChildren();
+          const art = document.createElement("span");
+          art.className = "art";
+          art.textContent = `${ok ? "正解" : "不正解"}(無線局運用規則 ${it.art})`;
+          $("proc-fb").append(art, document.createElement("br"), document.createTextNode(it.exp));
+          if (it.kind === "order" && !ok) {
+            const ans = document.createElement("div");
+            ans.textContent = "正しい順序: " + it.steps.map((s, i) => `${i + 1}. ${s}`).join(" → ");
+            $("proc-fb").appendChild(ans);
+          }
+          setButtons({ next: true });
+          $("proc-meta").textContent = `今回 ${st.correct} / ${st.total} 問正解`;
+        }
+
+        function renderChoice(it) {
+          const box = document.createElement("div");
+          box.className = "choices";
+          shuffle([it.a, ...it.d]).forEach((text) => {
+            const b = document.createElement("button");
+            b.textContent = text;
+            b.addEventListener("click", () => {
+              if (st.done) return;
+              const ok = text === it.a;
+              b.classList.add(ok ? "correct" : "incorrect");
+              if (!ok) [...box.children].forEach((x) => x.textContent === it.a && x.classList.add("correct"));
+              finish(ok);
+            });
+            box.appendChild(b);
+          });
+          $("proc-body").appendChild(box);
+        }
+
+        function renderOrder(it) {
+          const placed = document.createElement("ol");
+          placed.className = "placed";
+          const chips = document.createElement("div");
+          chips.className = "chips";
+          function draw() {
+            placed.replaceChildren();
+            st.placed.forEach((p) => {
+              const li = document.createElement("li");
+              li.textContent = p.s;
+              placed.appendChild(li);
+            });
+            setButtons({ undo: st.placed.length > 0 && !st.done, submit: st.placed.length === it.steps.length && !st.done });
+          }
+          shuffle(it.steps.map((s, i) => ({ s, i }))).forEach(({ s, i }) => {
+            const b = document.createElement("button");
+            b.textContent = s;
+            b.addEventListener("click", () => {
+              if (st.done) return;
+              st.placed.push({ s, i, b });
+              b.disabled = true;
+              draw();
+            });
+            chips.appendChild(b);
+          });
+          st.undo = () => {
+            const p = st.placed.pop();
+            if (p) p.b.disabled = false;
+            draw();
+          };
+          st.submit = () => {
+            const items = [...placed.children];
+            let ok = true;
+            st.placed.forEach((p, n) => {
+              const right = p.i === n;
+              if (!right) ok = false;
+              items[n].classList.add(right ? "ok" : "ng");
+            });
+            finish(ok);
+          };
+          $("proc-body").append(placed, chips);
+          draw();
+        }
+
+        function next() {
+          const p = pool();
+          if (!p.length) {
+            st.cur = null;
+            $("proc-q").textContent = "苦手な手順の記録はまだありません";
+            $("proc-body").replaceChildren();
+            $("proc-fb").textContent = "手順の問題で間違えると、ここに出題されます。";
+            $("proc-meta").textContent = "";
+            setButtons({});
+            return;
+          }
+          const cand = p.length > 1 ? p.filter((x) => x.id !== st.last) : p;
+          const it = cand[rnd(cand.length)];
+          st.cur = it;
+          st.last = it.id;
+          st.placed = [];
+          st.done = false;
+          $("proc-meta").textContent = `今回 ${st.correct} / ${st.total} 問正解`;
+          $("proc-q").textContent = it.q;
+          $("proc-body").replaceChildren();
+          $("proc-fb").replaceChildren();
+          setButtons({});
+          if (it.kind === "choice") renderChoice(it);
+          else renderOrder(it);
+        }
+
+        $("proc-undo").addEventListener("click", () => st.undo && st.undo());
+        $("proc-submit").addEventListener("click", () => st.submit && st.submit());
+        $("proc-next").addEventListener("click", next);
+        const setScope = (s) => {
+          st.scope = s;
+          $("proc-scope-all").classList.toggle("active", s === "all");
+          $("proc-scope-weak").classList.toggle("active", s === "weak");
+          st.total = 0;
+          st.correct = 0;
+          next();
+        };
+        $("proc-scope-all").addEventListener("click", () => setScope("all"));
+        $("proc-scope-weak").addEventListener("click", () => setScope("weak"));
+        window.procInit = () => {
+          if (!st.cur && !st.total) next();
+        };
+        window.procItems = PROCS;
+        window.procStartWeak = () => setScope("weak");
+      })();
+    </script>
+    <script>
+      // 復習: 学習記録から苦手を見える化し、そこから復習を始める
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        let tree = null;
+        const heatClass = (w) => (w < 0 ? "heat-none" : w === 0 ? "heat0" : w === 1 ? "heat1" : w === 2 ? "heat2" : "heat3");
+
+        function renderTree() {
+          if (!tree) {
+            tree = $("review-tree");
+            buildTree(tree);
+            tree.querySelectorAll("input").forEach((el) => {
+              el.value = el.dataset.char;
+              el.readOnly = true;
+              el.tabIndex = -1;
+            });
+          }
+          tree.querySelectorAll("input").forEach((el) => {
+            el.classList.remove("heat-none", "heat0", "heat1", "heat2", "heat3");
+            el.classList.add(heatClass(el.dataset.char ? morseStats.weakness("c:" + el.dataset.char) : -1));
+          });
+        }
+
+        function renderQ() {
+          const box = $("review-q");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("q:").slice(0, 15);
+          if (!keys.length) {
+            box.textContent = "苦手なQ符号・略符号の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = qcodeItems.find((x) => "q:" + x.c === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const code = document.createElement("span");
+            code.className = "code";
+            code.textContent = item.c;
+            const morse = document.createElement("span");
+            morse.textContent = item.morse;
+            const meaning = document.createElement("span");
+            meaning.className = "meaning";
+            meaning.textContent = item.m;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(code, morse, meaning, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function renderProc() {
+          const box = $("review-proc");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("p:").slice(0, 10);
+          if (!keys.length) {
+            box.textContent = "苦手な手順の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = procItems.find((x) => "p:" + x.id === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const art = document.createElement("span");
+            art.className = "code";
+            art.textContent = item.art;
+            const q = document.createElement("span");
+            q.textContent = item.q;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(art, q, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function render() {
+          const t = morseStats.totals();
+          const weakChars = morseStats.weakKeys("c:").length;
+          const weakQ = morseStats.weakKeys("q:").length;
+          const weakP = morseStats.weakKeys("p:").length;
+          $("review-summary").textContent = t.n
+            ? `解答 ${t.n} 回、正答率 ${Math.round(((t.n - t.miss) / t.n) * 100)}%。苦手: 文字・記号 ${weakChars} 個、Q符号・略符号 ${weakQ} 個、運用手順 ${weakP} 問。`
+            : "まだ学習記録がありません。聞き取り・クイズ・照合・手順・木の Check で解答すると、ここに集計されます。";
+          renderTree();
+          renderQ();
+          renderProc();
+          $("review-proc-start").disabled = !weakP;
+          $("review-listen").disabled = !weakChars;
+          $("review-qcode").disabled = !weakQ;
+        }
+
+        $("review-listen").addEventListener("click", () => {
+          showScreen("listen");
+          listenStartWeak();
+        });
+        $("review-qcode").addEventListener("click", () => {
+          showScreen("qcode");
+          qcodeStartWeak();
+        });
+        $("review-proc-start").addEventListener("click", () => {
+          showScreen("proc");
+          procStartWeak();
+        });
+        $("review-clear").addEventListener("click", () => {
+          if (confirm("学習記録をすべて消します。よろしいですか?")) {
+            morseStats.clear();
+            render();
+          }
+        });
+        window.reviewInit = render;
+      })();
+    </script>
+    <script>
       const saved = morseSettings.load();
       const wpmSelect = document.getElementById("wpm");
       const toneSelect = document.getElementById("tone");
@@ -1175,6 +2251,20 @@
       if (saved.tone) toneSelect.value = saved.tone;
       wpmSelect.addEventListener("change", () => morseSettings.save({ wpm: wpmSelect.value }));
       toneSelect.addEventListener("change", () => morseSettings.save({ tone: toneSelect.value }));
+      const gapSelect = document.getElementById("gap");
+      if (saved.gap) gapSelect.value = saved.gap;
+      gapSelect.addEventListener("change", () => morseSettings.save({ gap: gapSelect.value }));
+      const rampToggle = document.getElementById("ramp-toggle");
+      const showRamp = () => {
+        const on = !!morseSettings.load().ramp;
+        rampToggle.textContent = on ? "ON" : "OFF";
+        rampToggle.classList.toggle("active", on);
+      };
+      showRamp();
+      rampToggle.addEventListener("click", () => {
+        morseSettings.save({ ramp: !morseSettings.load().ramp });
+        showRamp();
+      });
       let treeSound = saved.sound !== false;
       const soundToggle = document.getElementById("sound-toggle");
       const showSound = () => {
@@ -1196,24 +2286,37 @@
         const code = e.target.dataset && e.target.dataset.code;
         if (treeSound && code && e.target.dataset.char !== "") morseAudio.play(code);
       });
-      const tabs = {
-        alphabet: ["tab-alphabet", "alphabet-view"],
-        qcode: ["tab-qcode", "qcode-view"],
-        listen: ["tab-listen", "listen-view"],
-        settings: ["tab-settings", "settings-view"],
+      const screens = {
+        alphabet: "alphabet-view",
+        qcode: "qcode-view",
+        listen: "listen-view",
+        check: "check-view",
+        proc: "proc-view",
+        review: "review-view",
+        settings: "settings-view",
       };
-      Object.entries(tabs).forEach(([name, [tabId]]) => {
-        document.getElementById(tabId).addEventListener("click", () => {
-          Object.entries(tabs).forEach(([n, [t, v]]) => {
-            document.getElementById(t).classList.toggle("active", n === name);
-            document.getElementById(v).hidden = n !== name;
-          });
-          if (name === "qcode") qcodeInit();
-          if (name === "listen") listenInit();
-          requestAnimationFrame(() => relayoutTrees());
-          if (name !== "listen") morseAudio.stop();
+      const screenSelect = document.getElementById("screen-select");
+      function showScreen(name) {
+        Object.entries(screens).forEach(([n, v]) => {
+          document.getElementById(v).hidden = n !== name;
         });
-      });
+        screenSelect.value = name;
+        morseSettings.save({ screen: name }); // 最後に開いた画面を覚える
+        if (name === "qcode") qcodeInit();
+        if (name === "listen") listenInit();
+        if (name === "check") checkInit();
+        if (name === "proc") procInit();
+        if (name === "review") reviewInit();
+        requestAnimationFrame(() => relayoutTrees());
+        if (name !== "listen") morseAudio.stop();
+      }
+      screenSelect.addEventListener("change", () => showScreen(screenSelect.value));
+      // オフライン対応: Service Worker を登録する(http/https で開いたときだけ)
+      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+        window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+      }
+      // 前回開いていた画面から再開する
+      if (saved.screen && screens[saved.screen] && saved.screen !== "alphabet") showScreen(saved.screen);
     </script>
   </body>
 </html>
