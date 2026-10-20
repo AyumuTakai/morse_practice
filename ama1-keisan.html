@@ -1,0 +1,410 @@
+<title>1アマ 計算ドリル</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: 方眼紙の問題カードを中心に、上に出題範囲と成績、下に解き方を並べる一列構成 */
+:root{
+  --bg:#edf1f5;
+  --paper:#fbfcfd;
+  --grid:#dbe4ec;
+  --ink:#16222e;
+  --muted:#5b6b7b;
+  --line:#c7d3de;
+  --accent:#0a6a8a;
+  --accent-ink:#ffffff;
+  --good:#1d7a4a;
+  --good-bg:#e1f3e9;
+  --bad:#b0352a;
+  --bad-bg:#fbe6e3;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --font-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e151c;--paper:#16202a;--grid:#1f2c38;--ink:#e6edf3;--muted:#92a3b3;--line:#2c3b49;
+    --accent:#4cc3e6;--accent-ink:#06222c;--good:#5fd18f;--good-bg:#12301f;--bad:#ff8d80;--bad-bg:#3a1a17;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e151c;--paper:#16202a;--grid:#1f2c38;--ink:#e6edf3;--muted:#92a3b3;--line:#2c3b49;
+  --accent:#4cc3e6;--accent-ink:#06222c;--good:#5fd18f;--good-bg:#12301f;--bad:#ff8d80;--bad-bg:#3a1a17;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 40px;
+}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header h1{font-size:1.5rem;line-height:1.3;margin:0;text-wrap:balance;letter-spacing:.02em}
+header p{margin:4px 0 0;color:var(--muted);font-size:.9rem}
+.label{font-size:.75rem;letter-spacing:.12em;color:var(--muted);font-weight:700;margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  font:inherit;font-size:.88rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  padding:4px 12px;border-radius:999px;cursor:pointer;min-height:36px;
+}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:18px;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;background-position:-1px -1px;
+}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.08em;color:var(--accent);
+  border:1px solid var(--accent);padding:0 8px;border-radius:3px;background:var(--paper)}
+.q{margin:10px 0 14px;font-size:1.05rem;background:var(--paper);padding:2px 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.ansrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ansrow label{font-weight:700}
+.inputwrap{display:flex;align-items:center;gap:8px;background:var(--paper);padding:4px 6px;border-radius:4px}
+input[type=text]{
+  font-family:var(--font-num);font-size:1.3rem;width:9.5rem;padding:6px 10px;border:2px solid var(--line);
+  border-radius:4px;background:var(--paper);color:var(--ink);text-align:right;
+}
+input[type=text]:focus{border-color:var(--accent);outline:none}
+.unit{font-family:var(--font-num);font-size:1.05rem}
+.tol{margin:8px 0 0;font-size:.8rem;color:var(--muted);background:var(--paper);display:inline-block;padding:0 4px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+button.btn{
+  font:inherit;font-weight:700;border-radius:4px;padding:8px 18px;min-height:44px;cursor:pointer;
+  border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+}
+button.btn.sub{background:var(--paper);color:var(--accent)}
+button.btn[hidden]{display:none}
+.result{margin-top:14px;border-radius:4px;padding:10px 14px;font-weight:700}
+.result.ok{background:var(--good-bg);color:var(--good)}
+.result.ng{background:var(--bad-bg);color:var(--bad)}
+.result .num{font-family:var(--font-num)}
+.sol{margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 14px}
+.sol h3{margin:0 0 4px;font-size:.8rem;letter-spacing:.12em;color:var(--muted)}
+.sol ol{margin:0;padding-left:1.4em}
+.sol li{margin:2px 0}
+.sol .m{font-family:var(--font-num);font-size:.95em}
+.stats{display:flex;flex-direction:column;gap:10px}
+.total{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:.95rem}
+.total b{font-family:var(--font-num);font-size:1.15rem}
+.bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 18px}
+.bar{display:grid;grid-template-columns:7.5em 1fr 4.5em;align-items:center;gap:8px;font-size:.85rem}
+.bar .track{height:8px;background:var(--grid);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);width:0}
+.bar .v{font-family:var(--font-num);text-align:right;color:var(--muted);font-size:.8rem}
+details{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+summary{cursor:pointer;font-weight:700}
+.tblwrap{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;font-size:.88rem;min-width:100%}
+th,td{border-bottom:1px solid var(--line);padding:4px 10px;text-align:left;white-space:nowrap}
+td.n{font-family:var(--font-num)}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .3s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>1アマ 計算ドリル</h1>
+    <p>無線工学A問題の計算問題用。電卓なしで解ける数字だけを出題します。log₁₀2 = 0.3 を使用。</p>
+  </header>
+
+  <section aria-labelledby="scope">
+    <p class="label" id="scope">出題範囲</p>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <span class="tag" id="cat"></span>
+    <p class="q" id="qtext"></p>
+    <form id="form" class="ansrow" autocomplete="off">
+      <label for="ans">答え</label>
+      <div class="inputwrap">
+        <input type="text" id="ans" inputmode="decimal" enterkeyhint="done" aria-describedby="tol">
+        <span class="unit" id="unit"></span>
+      </div>
+    </form>
+    <p class="tol" id="tol"></p>
+    <div class="btns">
+      <button class="btn" id="check" type="button">判定する</button>
+      <button class="btn sub" id="giveup" type="button">答えを見る</button>
+      <button class="btn" id="next" type="button" hidden>次の問題</button>
+    </div>
+    <div id="out"></div>
+  </section>
+
+  <section class="stats" aria-labelledby="st">
+    <p class="label" id="st">今回の成績</p>
+    <div class="total">
+      <span>出題 <b id="tn">0</b></span>
+      <span>正解 <b id="tok">0</b></span>
+      <span>正答率 <b id="trate">-</b></span>
+    </div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <details>
+    <summary>dB早見表(電卓なしで使う)</summary>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>倍率</th><th>電力 (10log)</th><th>電圧・電流 (20log)</th><th>覚え方</th></tr></thead>
+        <tbody>
+          <tr><td class="n">2</td><td class="n">3 dB</td><td class="n">6 dB</td><td>log₁₀2 = 0.3</td></tr>
+          <tr><td class="n">4</td><td class="n">6 dB</td><td class="n">12 dB</td><td>2×2</td></tr>
+          <tr><td class="n">5</td><td class="n">7 dB</td><td class="n">14 dB</td><td>10÷2</td></tr>
+          <tr><td class="n">8</td><td class="n">9 dB</td><td class="n">18 dB</td><td>2×2×2</td></tr>
+          <tr><td class="n">10</td><td class="n">10 dB</td><td class="n">20 dB</td><td>桁が1つ増えるごとに加算</td></tr>
+          <tr><td class="n">100</td><td class="n">20 dB</td><td class="n">40 dB</td><td>10×10</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:8px">掛け算は dB の足し算、割り算は引き算。dBm は 1 mW、dBμV は 1 μV を 0 dB の基準にします。</p>
+  </details>
+</div>
+
+<script>
+(function(){
+  var CATS = {
+    db:'dB換算', amp:'反転増幅器', am:'変調度', qw:'λ/4整合',
+    ant:'空中線電力', rect:'整流回路', cap:'コンデンサ', pf:'力率'
+  };
+  var ORDER = ['db','amp','am','qw','ant','rect','cap','pf'];
+
+  function ri(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function fmt(n){ return Number.isInteger(n) ? String(n) : String(+n.toFixed(2)); }
+  function m(s){ return '<span class="m">'+s+'</span>'; }
+
+  var TP = {1:0,2:3,4:6,5:7,8:9};
+  var TV = {1:0,2:6,4:12,5:14,8:18};
+  var EXP_P = {2:'2倍 = 3 dB',4:'4 = 2×2 なので 3+3 = 6 dB',5:'5 = 10÷2 なので 10−3 = 7 dB',8:'8 = 2×2×2 なので 3×3 = 9 dB'};
+  var EXP_V = {2:'2倍 = 6 dB',4:'4 = 2×2 なので 6+6 = 12 dB',5:'5 = 10÷2 なので 20−6 = 14 dB',8:'8 = 2×2×2 なので 6×3 = 18 dB'};
+
+  function pickMB(){
+    var mm,b;
+    do { mm = pick([1,2,4,5,8]); b = ri(0,3); } while (mm===1 && b===0);
+    return {m:mm,b:b};
+  }
+  function ratioSteps(mm,b,kind){
+    var base = kind==='p'?10:20, exp = kind==='p'?EXP_P:EXP_V, s=[];
+    if (mm!==1) s.push(m(mm)+' → '+exp[mm]);
+    if (b>0) s.push(m('10<sup>'+b+'</sup>')+' → '+base+' dB × '+b+' = '+(base*b)+' dB');
+    return s;
+  }
+
+  var gen = {};
+
+  gen.db = function(){
+    var t = ri(0,4), x = pickMB(), mm = x.m, b = x.b, ratio = mm*Math.pow(10,b);
+    var steps;
+    if (t===0){ // 電力比 -> dB
+      var db = TP[mm]+10*b;
+      steps = ['電力なので 10log を使う。'+m(ratio+' = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup>')].concat(ratioSteps(mm,b,'p'));
+      steps.push('足し算: '+m(db+' dB'));
+      return {text:'電力が '+m(ratio)+' 倍になった。これをデシベルで表すといくらか。', unit:'dB', ans:db, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dB まで正解)'};
+    }
+    if (t===1){ // 電圧比 -> dB
+      var dv = TV[mm]+20*b;
+      steps = ['電圧なので 20log を使う。'+m(ratio+' = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup>')].concat(ratioSteps(mm,b,'v'));
+      steps.push('足し算: '+m(dv+' dB'));
+      return {text:'電圧が '+m(ratio)+' 倍になった。これをデシベルで表すといくらか。', unit:'dB', ans:dv, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dB まで正解)'};
+    }
+    if (t===2){ // dB -> 電力比
+      var dd = TP[mm]+10*b;
+      steps = [m(dd+' dB')+' を '+m(TP[mm]+' dB')+' と '+m((10*b)+' dB')+' に分ける。', m(TP[mm]+' dB')+' → '+(mm===1?'1倍':EXP_P[mm].split(' = ')[0]+'は'+mm+'倍の意味'), m((10*b)+' dB')+' → '+m('10<sup>'+b+'</sup>')+' 倍', '掛け算: '+m(mm+' × 10<sup>'+b+'</sup> = '+ratio)+' 倍'];
+      return {text:'電力の利得が '+m(dd+' dB')+' のとき、電力は何倍か。', unit:'倍', ans:ratio, abs:0, rel:0.01, steps:steps, tolText:'整数で入力(±1% まで正解)'};
+    }
+    if (t===3){ // mW -> dBm
+      var dbm = TP[mm]+10*b;
+      steps = ['dBm は 1 mW を 0 dBm とした電力の dB 値。10log を使う。'+m(ratio+' mW = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup> mW')].concat(ratioSteps(mm,b,'p'));
+      steps.push('足し算: '+m(dbm+' dBm'));
+      return {text:'電力 '+m(ratio+' mW')+' は何 dBm か。', unit:'dBm', ans:dbm, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dBm まで正解)'};
+    }
+    // μV -> dBμV
+    var dbuv = TV[mm]+20*b;
+    steps = ['dBμV は 1 μV を 0 dBμV とした電圧の dB 値。20log を使う。'+m(ratio+' μV = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup> μV')].concat(ratioSteps(mm,b,'v'));
+    steps.push('足し算: '+m(dbuv+' dBμV'));
+    return {text:'電圧 '+m(ratio+' μV')+' は何 dBμV か。', unit:'dBμV', ans:dbuv, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dBμV まで正解)'};
+  };
+
+  gen.amp = function(){
+    var mm,b;
+    do { mm = pick([1,2,4,5,8]); b = ri(0,2); } while (mm===1 && b===0);
+    var G = TV[mm]+20*b, mult = mm*Math.pow(10,b), R1 = pick([1,2,5,10]), R2 = R1*mult;
+    var steps = ['反転増幅器の電圧利得は '+m('A = R₂ / R₁')+'(R₂ が帰還抵抗)。','利得 '+m(G+' dB')+' は電圧なので 20log。'];
+    steps = steps.concat(ratioSteps(mm,b,'v'));
+    steps.push('電圧の倍率は '+m(mm+' × 10<sup>'+b+'</sup> = '+mult)+' 倍。');
+    steps.push(m('R₂ = R₁ × '+mult+' = '+R1+' × '+mult+' = '+R2+' kΩ'));
+    return {text:'反転増幅器の電圧利得が '+m(G+' dB')+'、入力抵抗 R₁ が '+m(R1+' kΩ')+' のとき、帰還抵抗 R₂ は何 kΩ か。', unit:'kΩ', ans:R2, abs:0, rel:0.01, steps:steps, tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.am = function(){
+    if (Math.random()<0.5){
+      var Vc = pick([40,50,80,100]), mi = pick([0.3,0.4,0.5,0.6,0.8]), Vmax = +(Vc*(1+mi)).toFixed(2);
+      return {text:'搬送波の振幅が '+m(Vc+' V')+'、振幅変調波の最大振幅が '+m(fmt(Vmax)+' V')+' であった。変調度は何 % か。', unit:'%', ans:mi*100, abs:0.5, rel:0,
+        steps:['変調波の最大振幅は '+m('Vmax = Vc(1 + m)'),m('1 + m = '+fmt(Vmax)+' / '+Vc+' = '+fmt(+(Vmax/Vc).toFixed(3))),m('m = '+fmt(mi)+' → '+fmt(mi*100)+' %')],
+        tolText:'整数で入力(±0.5% まで正解)'};
+    }
+    var Vc2 = pick([40,80,120]), Vr = 0.75*Vc2;
+    return {text:'搬送波の振幅(最大値)が '+m(Vc2+' V')+' の単一正弦波で振幅変調した。変調波(搬送波+側帯波)の実効値が '+m(Vr+' V')+' のとき、変調度は何 % か。', unit:'%', ans:50, abs:0.5, rel:0,
+      steps:['変調波の実効値は '+m('V = (Vc/√2)·√(1 + m²/2)')+'(側帯波の電力が加わる)。',
+        m('V/Vc = '+Vr+' / '+Vc2+' = 0.75')+' なので両辺を2乗して2倍: '+m('2×0.75² = 1.125 = 1 + m²/2'),
+        m('m²/2 = 0.125 → m² = 0.25 → m = 0.5'),m('変調度 50 %')],
+      tolText:'整数で入力(±0.5% まで正解)'};
+  };
+
+  gen.qw = function(){
+    var pairs = [[75,50],[100,50],[50,100],[75,150],[50,75],[200,100],[300,150],[100,60],[75,100]];
+    if (Math.random()<0.7){
+      var p = pick(pairs), Z=p[0], Z0=p[1], Ra = Z0*Z0/Z;
+      return {text:'特性インピーダンス '+m(Z+' Ω')+' の給電線に、特性インピーダンス '+m(Z0+' Ω')+' の λ/4 整合回路を接続して整合をとる。アンテナの入力インピーダンス Ra は何 Ω か。', unit:'Ω', ans:Ra, abs:0.6, rel:0.02,
+        steps:['λ/4 整合の条件: '+m('Z₀² = Z × Ra'),m('Ra = Z₀² / Z = '+Z0+'² / '+Z+' = '+(Z0*Z0)+' / '+Z+' = '+fmt(Ra)+' Ω')],
+        tolText:'割り切れない場合は小数第1位まで(±2% まで正解)'};
+    }
+    var set = pick([[75,300,150],[50,200,100],[100,25,50],[50,50,50],[200,50,100]]);
+    return {text:'特性インピーダンス '+m(set[0]+' Ω')+' の給電線と入力インピーダンス '+m(set[1]+' Ω')+' のアンテナを λ/4 整合回路で整合させる。整合回路の特性インピーダンス Z₀ は何 Ω か。', unit:'Ω', ans:set[2], abs:0.6, rel:0.02,
+      steps:['λ/4 整合の条件: '+m('Z₀² = Z × Ra'),m('Z₀² = '+set[0]+' × '+set[1]+' = '+(set[0]*set[1])),m('Z₀ = √'+(set[0]*set[1])+' = '+set[2]+' Ω')],
+      tolText:'数値のみ(±2% まで正解)'};
+  };
+
+  gen.ant = function(){
+    var I = pick([1,1.5,2,3,5]), Rr = 36, Rt = pick([40,45,48,60]);
+    var P = I*I*Rr, eff = Rr/Rt*100;
+    if (Math.random()<0.5){
+      return {text:'λ/4 垂直接地アンテナに '+m(fmt(I)+' A')+' の電流を流した。放射抵抗が '+m(Rr+' Ω')+'、損失抵抗を含む実効抵抗が '+m(Rt+' Ω')+' のとき、放射電力は何 W か。', unit:'W', ans:P, abs:0.5, rel:0.01,
+        steps:['放射電力は放射抵抗で消費される電力: '+m('P = I² × Rr'),m('P = '+fmt(I)+'² × '+Rr+' = '+fmt(I*I)+' × '+Rr+' = '+fmt(P)+' W'),'(実効抵抗 '+Rt+' Ω はここでは使わない)'],
+        tolText:'数値のみ(±1% まで正解)'};
+    }
+    return {text:'λ/4 垂直接地アンテナで、放射抵抗が '+m(Rr+' Ω')+'、損失抵抗を含む実効抵抗が '+m(Rt+' Ω')+' である。このアンテナの効率は何 % か。', unit:'%', ans:eff, abs:0.6, rel:0,
+      steps:['効率 = 放射電力 ÷ 供給電力。電流が共通なので抵抗の比になる。',m('η = Rr / R = '+Rr+' / '+Rt+' = '+fmt(+(Rr/Rt).toFixed(3))),m('η = '+fmt(+eff.toFixed(1))+' %')],
+      tolText:'整数で入力(±0.6% まで正解)'};
+  };
+
+  gen.rect = function(){
+    var k = pick([30,40,50,60,100]), n = pick([2,3,4]);
+    return {text:'コンデンサ入力形の全波整流回路で、無負荷時の出力電圧が '+m(k+'√2 V')+' であった。変圧器の巻数比(一次:二次)が '+m(n+':1')+' のとき、一次側の電圧の実効値は何 V か。', unit:'V', ans:k*n, abs:0, rel:0.01,
+      steps:['コンデンサ入力形の無負荷出力は、二次電圧の最大値に等しい: '+m('Vout = √2 × V₂(実効値)'),m('V₂ = '+k+'√2 / √2 = '+k+' V'),'一次電圧 = 二次電圧 × 巻数比: '+m('V₁ = '+k+' × '+n+' = '+(k*n)+' V')],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.cap = function(){
+    var C1,C2,V1,V2,i=0;
+    do {
+      C1 = pick([2,3,4,6]); C2 = pick([1,2,3,4,6,8,9,12]); V2 = pick([2,3,4,5,6]);
+      V1 = V2*(C1+C2)/C1; i++;
+    } while ((!Number.isInteger(V1) || V1>30 || V1<=V2) && i<300);
+    if (!Number.isInteger(V1)){ C1=3;C2=6;V2=4;V1=12; }
+    return {text:'静電容量 C₁ = '+m(C1+' μF')+' のコンデンサを '+m(V1+' V')+' に充電した。次に、これを電荷のない C₂ に並列につなぐと、端子電圧が '+m(V2+' V')+' になった。C₂ は何 μF か。', unit:'μF', ans:C2, abs:0, rel:0.01,
+      steps:['接続の前後で電荷の総量は変わらない(電荷保存)。',m('C₁V₁ = (C₁ + C₂)V₂'),m(C1+' × '+V1+' = '+(C1*V1)+' = ('+C1+' + C₂) × '+V2),m(C1+' + C₂ = '+(C1*V1)+' / '+V2+' = '+fmt(C1*V1/V2)),m('C₂ = '+fmt(C1*V1/V2)+' − '+C1+' = '+C2+' μF')],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.pf = function(){
+    var t = pick([[3,4],[4,3]]), k = pick([5,10,15,20]), R = t[0]*k, X = t[1]*k, Z = 5*k;
+    if (Math.random()<0.5){
+      return {text:'抵抗 R = '+m(R+' Ω')+' と誘導性リアクタンス X = '+m(X+' Ω')+' の直列回路の力率は何 % か。', unit:'%', ans:R/Z*100, abs:0.5, rel:0,
+        steps:['インピーダンスの大きさ: '+m('Z = √(R² + X²) = √('+(R*R)+' + '+(X*X)+') = √'+(Z*Z)+' = '+Z+' Ω'),m('力率 = R / Z = '+R+' / '+Z+' = '+fmt(R/Z)),m(fmt(R/Z*100)+' %')],
+        tolText:'整数で入力(±0.5% まで正解)'};
+    }
+    return {text:'抵抗 R = '+m(R+' Ω')+' と誘導性リアクタンス X = '+m(X+' Ω')+' の直列回路のインピーダンスの大きさ Z は何 Ω か。', unit:'Ω', ans:Z, abs:0, rel:0.01,
+      steps:[m('Z = √(R² + X²)'),m('R² = '+(R*R)+'、X² = '+(X*X)+' → 合計 '+(Z*Z)),m('Z = √'+(Z*Z)+' = '+Z+' Ω'),'3:4:5 の直角三角形(の何倍か)に気づくと早い。'],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  if (typeof document === 'undefined'){ globalThis.__gen = gen; globalThis.__order = ORDER; return; }
+
+  /* ---------- UI ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var active = {}, stats = {}, total = {n:0, ok:0}, cur = null, answered = false;
+  ORDER.forEach(function(k){ active[k] = true; stats[k] = {n:0, ok:0}; });
+
+  function renderChips(){
+    var box = $('chips'); box.innerHTML = '';
+    var all = document.createElement('button');
+    all.type = 'button'; all.className = 'chip'; all.textContent = 'すべて';
+    all.setAttribute('aria-pressed', ORDER.every(function(k){return active[k];}) ? 'true':'false');
+    all.onclick = function(){ ORDER.forEach(function(k){ active[k] = true; }); renderChips(); newProblem(); };
+    box.appendChild(all);
+    ORDER.forEach(function(k){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = CATS[k];
+      b.setAttribute('aria-pressed', active[k] ? 'true':'false');
+      b.onclick = function(){
+        var onlyThis = ORDER.every(function(x){ return active[x] === (x===k); });
+        if (onlyThis) { ORDER.forEach(function(x){ active[x] = true; }); }
+        else if (ORDER.every(function(x){ return active[x]; })) { ORDER.forEach(function(x){ active[x] = (x===k); }); }
+        else { active[k] = !active[k]; if (!ORDER.some(function(x){return active[x];})) active[k] = true; }
+        renderChips(); newProblem();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function renderStats(){
+    $('tn').textContent = total.n; $('tok').textContent = total.ok;
+    $('trate').textContent = total.n ? Math.round(total.ok/total.n*100)+'%' : '-';
+    var bars = $('bars'); bars.innerHTML = '';
+    ORDER.forEach(function(k){
+      var s = stats[k], row = document.createElement('div'); row.className = 'bar';
+      var pct = s.n ? s.ok/s.n*100 : 0;
+      row.innerHTML = '<span>'+CATS[k]+'</span><span class="track"><span class="fill" style="display:block;width:'+pct+'%"></span></span><span class="v">'+s.ok+'/'+s.n+'</span>';
+      bars.appendChild(row);
+    });
+  }
+
+  function newProblem(){
+    var keys = ORDER.filter(function(k){ return active[k]; });
+    var k = pick(keys);
+    cur = gen[k](); cur.cat = k; answered = false;
+    $('cat').textContent = CATS[k];
+    $('qtext').innerHTML = cur.text;
+    $('unit').textContent = cur.unit;
+    $('tol').textContent = cur.tolText;
+    $('ans').value = ''; $('ans').disabled = false;
+    $('out').innerHTML = '';
+    $('check').hidden = false; $('giveup').hidden = false; $('next').hidden = true;
+    $('ans').focus({preventScroll:true});
+  }
+
+  function parse(s){
+    s = String(s).normalize('NFKC').replace(/[\s,]/g,'').replace(/[−ー]/g,'-');
+    return /^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : null;
+  }
+
+  function finish(ok, userVal){
+    answered = true;
+    total.n++; stats[cur.cat].n++;
+    if (ok){ total.ok++; stats[cur.cat].ok++; }
+    var out = $('out'); out.innerHTML = '';
+    var r = document.createElement('div'); r.className = 'result ' + (ok ? 'ok' : 'ng');
+    r.innerHTML = (ok ? '正解です。' : (userVal===null ? '答えは ' : '不正解です。正しい答えは ')) + '<span class="num">' + fmt(+cur.ans.toFixed(2)) + ' ' + cur.unit + '</span>' + (ok ? '' : ' です。');
+    out.appendChild(r);
+    var sol = document.createElement('div'); sol.className = 'sol';
+    sol.innerHTML = '<h3>解き方</h3><ol>' + cur.steps.map(function(x){ return '<li>'+x+'</li>'; }).join('') + '</ol>';
+    out.appendChild(sol);
+    $('check').hidden = true; $('giveup').hidden = true; $('next').hidden = false;
+    $('ans').disabled = true;
+    renderStats();
+    $('next').focus({preventScroll:true});
+  }
+
+  function check(){
+    if (answered) return;
+    var v = parse($('ans').value);
+    if (v === null){
+      $('out').innerHTML = '<div class="result ng">数字で入力してください。</div>';
+      return;
+    }
+    var ok = Math.abs(v - cur.ans) <= Math.max(cur.abs||0, (cur.rel||0)*Math.abs(cur.ans)) + 1e-9;
+    finish(ok, v);
+  }
+
+  $('form').addEventListener('submit', function(e){ e.preventDefault(); check(); });
+  $('check').onclick = check;
+  $('giveup').onclick = function(){ if (!answered) finish(false, null); };
+  $('next').onclick = newProblem;
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && answered && document.activeElement !== $('next')) { e.preventDefault(); newProblem(); }
+  });
+
+  renderChips(); renderStats(); newProblem();
+})();
+</script>
