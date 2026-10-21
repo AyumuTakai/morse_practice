@@ -1,6 +1,6 @@
 # アマチュア無線 受験勉強
 
-[pages](https://ayumutakai.github.io/morse_practice/)
+[pages](https://ayumutakai.github.io/amateur_radio_drill/)
 
 アマチュア無線技士の受験勉強用アプリです。分野ごと・級ごとにページが分かれていて、
 よく使うページを「ホーム画面に追加」すると、アプリのように開けます(オフラインでも使えます)。
