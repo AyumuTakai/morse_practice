@@ -1,0 +1,26 @@
+{
+  "name": "モールスの木 - 受験勉強",
+  "short_name": "モールスの木",
+  "description": "アマチュア無線の受験勉強用アプリ(モールス・Q符号・運用手順・計算)",
+  "lang": "ja",
+  "start_url": "../tree.html",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f0f8ff",
+  "theme_color": "#778899",
+  "icons": [
+    {
+      "src": "../icons/tree-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/tree-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Q符号・略符号 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Q符号" />
+    <link rel="manifest" href="manifests/qcode.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/qcode-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      #qcode-view {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 1em;
+      
+      }
+      #qcode-view .tabs {
+              display: flex;
+              gap: 0.5em;
+              margin-bottom: 1em;
+      
+      }
+      #qcode-view button {
+              font-size: 1rem;
+              padding: 0.6em 1em;
+              border-radius: 2em;
+              border: 1px solid lightslategray;
+              background-color: transparent;
+              cursor: pointer;
+      
+      }
+      #qcode-view button.active {
+              background-color: lightslategray;
+              color: white;
+      
+      }
+      #qcode-view .note {
+              font-size: 0.8rem;
+              color: #555;
+      
+      }
+      #qcode-view table {
+              width: 100%;
+              border-collapse: collapse;
+              background: white;
+      
+      }
+      #qcode-view th,
+      #qcode-view td {
+              border: 1px solid #ccc;
+              padding: 0.5em;
+              text-align: left;
+              vertical-align: top;
+      
+      }
+      #qcode-view td.code {
+              font-weight: bold;
+              font-family: monospace;
+              white-space: nowrap;
+      
+      }
+      #qcode-view td.hidden-cell {
+              color: transparent;
+              background: #eee;
+              cursor: pointer;
+              user-select: none;
+      
+      }
+      #qcode-view .toolbar {
+              display: flex;
+              gap: 0.5em;
+              flex-wrap: wrap;
+              margin-bottom: 1em;
+      
+      }
+      #qcode-view .card {
+              background: white;
+              border: 1px solid #ccc;
+              border-radius: 1em;
+              padding: 1em;
+      
+      }
+      #qcode-view .prompt {
+              font-size: 1.4rem;
+              margin: 0.5em 0 1em;
+      
+      }
+      #qcode-view .choices {
+              display: grid;
+              gap: 0.5em;
+      
+      }
+      #qcode-view .choices button {
+              border-radius: 0.8em;
+              text-align: left;
+              background: white;
+      
+      }
+      #qcode-view .choices button.correct {
+              background-color: aquamarine;
+      
+      }
+      #qcode-view .choices button.incorrect {
+              background-color: coral;
+      
+      }
+      #qcode-view .detail {
+              margin-top: 1em;
+              font-size: 0.95rem;
+              min-height: 4em;
+      
+      }
+      #qcode-view .score {
+              float: right;
+              font-size: 0.9rem;
+      
+      }
+      #qcode-view button {
+              height: auto;
+              font-size: 1rem;
+              padding: 0.6em 1em;
+              margin: 0;
+      
+      }
+      #qcode-view {
+              padding-top: 1em;
+      
+      }
+      #qcode-view td.play {
+              text-align: center;
+      
+      }
+      #qcode-view td.play button {
+              padding: 0.1em 0.6em;
+              font-size: 0.9rem;
+      
+      }
+      @media (max-width: 600px) {
+        #qcode-view {
+                  padding: 0.5em;
+          
+        }
+        #qcode-view table,
+        #qcode-view tbody,
+        #qcode-view tr,
+        #qcode-view td {
+                  display: block;
+          
+        }
+        #qcode-view thead {
+                  display: none;
+          
+        }
+        #qcode-view tr {
+                  display: grid;
+                  grid-template-columns: auto 1fr auto;
+                  gap: 0.2em 0.6em;
+                  align-items: center;
+                  background: white;
+                  border: 1px solid #ccc;
+                  border-radius: 0.6em;
+                  padding: 0.4em 0.6em;
+                  margin-bottom: 0.5em;
+          
+        }
+        #qcode-view td {
+                  border: 0;
+                  padding: 0.1em 0;
+          
+        }
+        #qcode-view td.code {
+                  grid-column: 1;
+                  font-size: 1.1rem;
+          
+        }
+        #qcode-view td.morse {
+                  grid-column: 2;
+                  font-size: 0.9rem;
+          
+        }
+        #qcode-view td.play {
+                  grid-column: 3;
+                  grid-row: 1;
+          
+        }
+        #qcode-view td.meaning {
+                  grid-column: 1 / 4;
+          
+        }
+        #qcode-view td.exam {
+                  grid-column: 1 / 4;
+                  font-size: 0.8rem;
+                  color: #555;
+          
+        }
+        #qcode-view button {
+                  padding: 0.5em 0.8em;
+          
+        }
+        #qcode-view .choices button {
+                  padding: 0.7em 0.8em;
+          
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="qcode.html">
+    <header>
+      <h1>Q符号・略符号</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <p class="scope-note">対象: 2級・1級(3級は手順の中の一部の略符号のみ)。4級では出題されません</p>
+    <div id="grade-bar"></div>
+    <div id="grade-none" class="not-in-grade" hidden>
+      4級では、Q符号・略符号は出題されません。3級・2級・1級を選ぶと、その級で出る符号を練習できます。
+    </div>
+    <div id="qcode-view">
+      <div class="toolbar">
+        <button id="qtab-list" class="active">一覧</button>
+        <button id="qtab-quiz">クイズ</button>
+      </div>
+<!-- 一覧 -->
+      <section id="list-view">
+        <div class="toolbar">
+          <button id="hide-meaning">意味を隠す</button>
+          <button id="hide-code">符号を隠す</button>
+          <button id="hide-morse">モールスを隠す</button>
+          <button id="show-all">すべて表示</button>
+          <button id="list-scope">表示: この級で出たもの</button>
+        </div>
+        <p class="note">隠したセルはクリックで表示できます。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>符号</th>
+              <th>モールス</th>
+              <th>意味(過去問・運用規則の表記)</th>
+              <th>過去問・出典</th>
+              <th>音</th>
+            </tr>
+          </thead>
+          <tbody id="list-body"></tbody>
+        </table>
+      </section>
+
+      <!-- クイズ -->
+      <section id="quiz-view" hidden>
+        <div class="toolbar">
+          <button id="mode-code" class="active">符号 → 意味</button>
+          <button id="mode-meaning">意味 → 符号</button>
+          <button id="mode-morse">意味 → モールス(試験形式)</button>
+          <button id="mode-sound">音 → 符号</button>
+          <button id="scope">範囲: その級の過去問に出たもの</button>
+          <button id="restart">最初から</button>
+          <button id="retry-missed">間違えた問題だけ</button>
+        </div>
+        <div class="card">
+          <span class="score" id="score"></span>
+          <div class="prompt" id="prompt"></div>
+          <button id="replay" hidden>▶ もう一度聞く</button>
+          <div class="choices" id="choices"></div>
+          <div class="detail" id="detail"></div>
+          <button id="next" hidden>次へ</button>
+        </div>
+      </section>
+      <p class="note">※ ★は法規の過去問(令和6年12月期〜令和8年8月期)で出題された項目で、意味はその表記に合わせています。
+        ★のない項目の意味は、無線局運用規則 別表第2号(e-Gov)の原文に合わせています。</p>
+    </div>
+    <script src="assets/common.js"></script>
+    <script src="assets/data-qcode.js"></script>
+    <script>
+
+      (() => {
+        // c: 符号 / m: 意味 / g: 分類 / x: 出題された過去問 / mo: モールス(省略時は文字から生成)
+        const $ = (id) => document.getElementById(id);
+        const QCODES = window.QCODES; // data-qcode.js
+        const toMorse = window.qcodeToMorse;
+
+        // 級: 選択バーで切り替える。出題が確認できた符号は gr に級が入っている(data-qcode.js)
+        const grade = () => morseGrade.get() || 1;
+        const inGrade = (item) => item.gr.includes(grade());
+        const evidence = (item) => {
+          const g = grade();
+          if (!inGrade(item)) return "別表第2号";
+          if (g === 1) return "★ " + item.x.join(", ");
+          return g === 2 ? "★ 2級の過去問で出題" : "★ 3級の例題で出題";
+        };
+        let listOnlyGrade = true;
+
+        // ---- 一覧 ----
+        const listBody = $("list-body");
+        function renderList() {
+          listBody.replaceChildren();
+          QCODES.filter((item) => !listOnlyGrade || inGrade(item)).forEach(addRow);
+          $("list-scope").textContent = "表示: " + (listOnlyGrade ? "この級で出たもの" : "すべて");
+        }
+        function addRow(item) {
+          const tr = document.createElement("tr");
+          [
+            ["code", item.c],
+            ["morse", item.morse],
+            ["meaning", item.m],
+            ["exam", evidence(item)],
+          ].forEach(([kind, text]) => {
+            const td = document.createElement("td");
+            td.textContent = text;
+            td.classList.add(kind);
+            tr.appendChild(td);
+          });
+          const play = document.createElement("td");
+          play.classList.add("play");
+          const btn = document.createElement("button");
+          btn.textContent = "▶";
+          btn.addEventListener("click", () => morseAudio.play(item.morse));
+          play.appendChild(btn);
+          tr.appendChild(play);
+          listBody.appendChild(tr);
+        }
+        $("list-scope").addEventListener("click", () => {
+          listOnlyGrade = !listOnlyGrade;
+          renderList();
+        });
+        listBody.addEventListener("click", (e) => {
+          if (e.target.tagName === "TD") e.target.classList.remove("hidden-cell");
+        });
+        const setHidden = (selector, hidden) =>
+          listBody
+            .querySelectorAll(selector)
+            .forEach((td) => td.classList.toggle("hidden-cell", hidden));
+        $("hide-meaning").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.meaning", true);
+        });
+        $("hide-code").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.code", true);
+        });
+        $("hide-morse").addEventListener("click", () => {
+          setHidden("td:not(.play)", false);
+          setHidden("td.morse", true);
+        });
+        $("show-all").addEventListener("click", () => setHidden("td:not(.play)", false));
+
+        // ---- クイズ ----
+        const quiz = { mode: "code", scope: "exam", queue: [], index: 0, correct: 0, missed: [], answered: false };
+
+        const shuffle = (arr) => {
+          const a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        };
+
+        const SCOPES = {
+          exam: "範囲: その級の過去問に出たもの",
+          all: "範囲: すべて",
+          weak: "範囲: 苦手(学習記録から)",
+        };
+        // 苦手: 直近に誤答のある符号(誤答の多い順)
+        const weakItems = () =>
+          morseStats.weakKeys("q:").map((k) => QCODES.find((x) => "q:" + x.c === k)).filter(Boolean);
+        const pool = () =>
+          quiz.scope === "exam" ? QCODES.filter(inGrade) : quiz.scope === "weak" ? weakItems() : QCODES;
+
+        function startQuiz(items = pool()) {
+          if (!items.length) {
+            quiz.queue = [];
+            $("prompt").textContent = "苦手な符号の記録はまだありません";
+            $("choices").replaceChildren();
+            $("detail").textContent = "クイズで間違えた符号が、ここに出題されます。";
+            $("score").textContent = "";
+            $("next").hidden = true;
+            $("replay").hidden = true;
+            return;
+          }
+          quiz.queue = shuffle(items);
+          quiz.index = 0;
+          quiz.correct = 0;
+          quiz.missed = [];
+          renderQuestion();
+        }
+
+        // 数字付きの符号は、数字だけ違う誤答も作る(例: QSA4 に対する QSA5)
+        function fakeVariants(item) {
+          if (!item.num) return [];
+          const base = item.c.slice(0, 3);
+          return [1, 2, 3, 4, 5]
+            .filter((n) => String(n) !== item.c.slice(3))
+            .map((n) => ({ c: base + n, morse: toMorse(base + n), fake: true }));
+        }
+
+        function distractors(item) {
+          const cand = (quiz.scope === "exam" ? pool() : QCODES).filter((x) => x !== item);
+          // 同じ分類・同じ先頭2文字の符号ほど紛らわしい選択肢として優先する
+          const prefix = (x) => x.c.slice(0, 2) === item.c.slice(0, 2);
+          const rank = (x) => (x.g === item.g ? 0 : 2) + (prefix(x) ? 0 : 1);
+          const base = shuffle(cand).sort((x, y) => rank(x) - rank(y));
+          // 意味を選ぶ形式では、意味のない誤答候補は使えない
+          const fakes = quiz.mode === "code" ? [] : shuffle(fakeVariants(item)).slice(0, 2);
+          return [...fakes, ...base].slice(0, 3);
+        }
+
+        const label = (opt) =>
+          quiz.mode === "code" ? opt.m : quiz.mode === "morse" ? opt.morse : opt.c;
+
+        function renderQuestion() {
+          const item = quiz.queue[quiz.index];
+          quiz.answered = false;
+          $("next").hidden = true;
+          $("detail").textContent = "";
+          $("score").textContent = `${quiz.index + 1} / ${quiz.queue.length}  正解 ${quiz.correct}`;
+          if (!item) return renderResult();
+
+          $("prompt").textContent =
+            quiz.mode === "code" ? item.c : quiz.mode === "sound" ? "♪ 聞こえた符号は?" : item.m;
+          $("replay").hidden = quiz.mode !== "sound";
+          if (quiz.mode === "sound") morseAudio.play(item.morse);
+          const options = shuffle([item, ...distractors(item)]);
+          const box = $("choices");
+          box.replaceChildren();
+          options.forEach((opt) => {
+            const b = document.createElement("button");
+            b.textContent = label(opt);
+            b.addEventListener("click", () => answer(b, opt === item, item));
+            box.appendChild(b);
+          });
+        }
+
+        function answer(btn, isCorrect, item) {
+          if (quiz.answered) return;
+          quiz.answered = true;
+          morseStats.record("q:" + item.c, isCorrect);
+          btn.classList.add(isCorrect ? "correct" : "incorrect");
+          if (isCorrect) {
+            quiz.correct++;
+          } else {
+            quiz.missed.push(item);
+            [...$("choices").children].forEach((b) => {
+              if (b.textContent === label(item)) b.classList.add("correct");
+            });
+          }
+          $("detail").textContent =
+            `${item.c} ${item.morse} … ${item.m}` + (inGrade(item) ? `  ${evidence(item)}` : "");
+          $("score").textContent = `${quiz.index + 1} / ${quiz.queue.length}  正解 ${quiz.correct}`;
+          $("next").hidden = false;
+        }
+
+        function renderResult() {
+          $("prompt").textContent = `結果: ${quiz.correct} / ${quiz.queue.length}`;
+          $("choices").replaceChildren();
+          $("detail").textContent = quiz.missed.length
+            ? "間違えた符号: " + quiz.missed.map((x) => x.c).join(", ")
+            : "全問正解です!";
+          $("next").hidden = true;
+        }
+
+        $("next").addEventListener("click", () => {
+          quiz.index++;
+          renderQuestion();
+        });
+        $("restart").addEventListener("click", () => startQuiz());
+        $("retry-missed").addEventListener("click", () => {
+          if (quiz.missed.length) startQuiz(quiz.missed);
+        });
+        const setScope = (scope) => {
+          quiz.scope = scope;
+          $("scope").textContent = SCOPES[scope];
+          startQuiz();
+        };
+        $("scope").addEventListener("click", () => {
+          const order = Object.keys(SCOPES);
+          setScope(order[(order.indexOf(quiz.scope) + 1) % order.length]);
+        });
+        function setMode(mode) {
+          quiz.mode = mode;
+          ["code", "meaning", "morse", "sound"].forEach((m) =>
+            $("mode-" + m).classList.toggle("active", mode === m)
+          );
+          startQuiz();
+        }
+        $("mode-code").addEventListener("click", () => setMode("code"));
+        $("mode-meaning").addEventListener("click", () => setMode("meaning"));
+        $("mode-morse").addEventListener("click", () => setMode("morse"));
+        $("mode-sound").addEventListener("click", () => setMode("sound"));
+        $("replay").addEventListener("click", () => {
+          const item = quiz.queue[quiz.index];
+          if (item) morseAudio.play(item.morse);
+        });
+
+        // 一覧とクイズの切り替え
+        const showQ = (name) => {
+          $("list-view").hidden = name !== "list";
+          $("quiz-view").hidden = name !== "quiz";
+          $("qtab-list").classList.toggle("active", name === "list");
+          $("qtab-quiz").classList.toggle("active", name === "quiz");
+          if (name === "quiz" && !quiz.queue.length) startQuiz();
+        };
+        $("qtab-list").addEventListener("click", () => showQ("list"));
+        $("qtab-quiz").addEventListener("click", () => showQ("quiz"));
+        // 級が変わったら、一覧とクイズを作り直す。4級では出題されないので案内を出す
+        const applyGrade = () => {
+          const none = grade() === 4;
+          $("grade-none").hidden = !none;
+          $("qcode-view").hidden = none;
+          if (none) return;
+          renderList();
+          quiz.queue = [];
+          startQuiz();
+        };
+        window.qcodeInit = () => {
+          morseGradeBar($("grade-bar"), applyGrade);
+          renderList();
+          if (grade() === 4) applyGrade();
+          else if (!quiz.queue.length) startQuiz();
+        };
+        // 復習画面から: 苦手な符号をクイズで出題する
+        window.qcodeStartWeak = () => {
+          setScope("weak");
+          showQ("quiz");
+        };
+  })();
+    
+      qcodeInit();
+      if (new URLSearchParams(location.search).get("weak")) qcodeStartWeak();
+    </script>
+  </body>
+</html>
