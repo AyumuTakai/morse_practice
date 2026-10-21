@@ -168,32 +168,38 @@ window.morseStats = (() => {
   };
 })();
     
-// ページの切り替え(ヘッダーのドロップダウン)。ホームと、分野ごとのページを並べる
+// ページの切り替え(ヘッダーのドロップダウン)。ホーム・級・分野ごとのページを並べる
 (() => {
-  const PAGES = [["tree.html", "モールスの木", "モールス"], ["listen.html", "聞き取り", "モールス"], ["check.html", "字句照合", "モールス"], ["qcode.html", "Q符号・略符号", "法規"], ["procedure.html", "運用手順", "法規"], ["keisan-1.html", "1級 計算", "計算"], ["review.html", "復習", "記録・設定"], ["settings.html", "設定", "記録・設定"]];
+  const GROUPS = [["級を選ぶ", [["kyu-4.html", "4級"], ["kyu-3.html", "3級"], ["kyu-2.html", "2級"], ["kyu-1.html", "1級"]]], ["モールス", [["tree.html", "モールスの木"], ["listen.html", "聞き取り"], ["check.html", "字句照合"]]], ["法規", [["qcode.html", "Q符号・略符号"], ["procedure.html", "運用手順"]]], ["計算", [["keisan-1.html", "1級 計算"]]], ["記録・設定", [["review.html", "復習"], ["settings.html", "設定"]]]];
   const select = document.getElementById("page-select");
   if (!select) return;
   const here = document.body.dataset.page || location.pathname.split("/").pop() || "index.html";
   const home = document.createElement("option");
   home.value = "index.html";
-  home.textContent = "ホーム";
+  home.textContent = "ホーム(級を選ぶ)";
   select.appendChild(home);
-  let group = null;
-  let og = null;
-  PAGES.forEach(([file, label, g]) => {
-    if (g !== group) {
-      og = document.createElement("optgroup");
-      og.label = g;
-      select.appendChild(og);
-      group = g;
-    }
-    const o = document.createElement("option");
-    o.value = file;
-    o.textContent = label;
-    og.appendChild(o);
+  GROUPS.forEach(([label, pages]) => {
+    const og = document.createElement("optgroup");
+    og.label = label;
+    pages.forEach(([file, name]) => {
+      const o = document.createElement("option");
+      o.value = file;
+      o.textContent = name;
+      og.appendChild(o);
+    });
+    select.appendChild(og);
   });
   select.value = here;
   select.addEventListener("change", () => (location.href = select.value));
+  // 練習ページでは、直前に選んだ級のメニューへ戻るリンクを出す
+  const grade = Number(morseSettings.load().grade);
+  if (grade >= 1 && grade <= 4 && !/^(index|kyu-\d)\.html$/.test(here)) {
+    const back = document.createElement("a");
+    back.className = "back";
+    back.href = `kyu-${grade}.html`;
+    back.textContent = `← ${grade}級`;
+    select.parentNode.insertBefore(back, select);
+  }
 })();
 
 // オフライン対応: Service Worker を登録する(http/https で開いたときだけ)

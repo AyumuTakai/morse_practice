@@ -107,3 +107,16 @@ header {
   color: #3b4a5a;
   background: #e3ebf3;
 }
+
+/* ヘッダー右側: 「← N級」の戻るリンクとドロップダウン */
+header nav {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+header nav .back {
+  color: white;
+  font-size: 0.9rem;
+  text-decoration: none;
+  white-space: nowrap;
+}

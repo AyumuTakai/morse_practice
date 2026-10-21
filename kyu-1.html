@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1級 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="1級" />
+    <link rel="manifest" href="manifests/kyu-1.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/kyu-1-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <link rel="stylesheet" href="assets/portal.css" />
+  </head>
+  <body data-page="kyu-1.html">
+    <header>
+      <h1>1級</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <main style="--c:#bd4b47">
+      <p class="lead">1級では、モールス符号、Q符号・略符号、無線電信の運用手順が出題されます。字句とモールス符号の○×(B問題)も出ます。計算問題は9分野です。</p>
+      <section>
+        <h2>モールス</h2>
+        <div class="cards">
+        <a class="card" href="tree.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">モールスの木</span><span class="desc">モールス符号の木に、文字と記号を入れて覚えます。</span></a>
+        <a class="card" href="listen.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">聞き取り</span><span class="desc">音を聞いて文字を答えます(1・3・5文字、速度の自動加速つき)。</span></a>
+        <a class="card" href="check.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">字句照合</span><span class="desc">過去問のB問題と同じ形式で、字句とモールス符号の組合せを照合します。</span></a>
+        </div>
+      </section>
+      <section>
+        <h2>法規(無線電信の運用)</h2>
+        <div class="cards">
+        <a class="card" href="qcode.html"><span class="dot" style="background:#2f8a78"></span><span class="name">Q符号・略符号</span><span class="desc">Q符号と略符号の一覧と4択クイズ(意味・モールス・音)。</span></a>
+        <a class="card" href="procedure.html"><span class="dot" style="background:#2f8a78"></span><span class="name">運用手順</span><span class="desc">無線局運用規則の手順(呼出し・応答・非常通信など)と、通信例。</span></a>
+        </div>
+      </section>
+      <section>
+        <h2>計算</h2>
+        <div class="cards">
+        <a class="card" href="keisan-1.html"><span class="dot" style="background:#d07a2a"></span><span class="name">1級 計算</span><span class="desc">1級アマチュア無線技士の計算問題(9分野)。電卓なしで解けます。</span></a>
+        </div>
+      </section>
+      <section>
+        <h2>すべての級で使える</h2>
+        <div class="cards">
+        <a class="card" href="review.html"><span class="dot" style="background:#7a5ea8"></span><span class="name">復習</span><span class="desc">学習記録から苦手を見つけて、そこだけ復習します。</span></a>
+        <a class="card" href="settings.html"><span class="dot" style="background:#6b6b6b"></span><span class="name">設定</span><span class="desc">速度・音程・文字の間隔・自動加速・サウンド。</span></a>
+        </div>
+      </section>
+      <p class="here">ほかの級: <a href="kyu-4.html">4級</a> <a href="kyu-3.html">3級</a> <a href="kyu-2.html">2級</a></p>
+    </main>
+    <script src="assets/common.js"></script>
+    <script>
+      // 選んだ級を覚える(練習ページの「← 1級」で、この級のメニューに戻れる)
+      morseSettings.save({ grade: 1 });
+    </script>
+  </body>
+</html>

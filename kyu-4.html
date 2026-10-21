@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>4級 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="4級" />
+    <link rel="manifest" href="manifests/kyu-4.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/kyu-4-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <link rel="stylesheet" href="assets/portal.css" />
+  </head>
+  <body data-page="kyu-4.html">
+    <header>
+      <h1>4級</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <main style="--c:#4f9a62">
+      <p class="lead">4級では、モールス・Q符号・略符号・無線電信の運用手順は<strong>出題されません</strong>。このアプリでは、計算問題(準備中)で練習します。</p>
+      <section>
+        <h2>計算</h2>
+        <div class="cards">
+        <span class="card soon"><span class="dot" style="background:#bbb"></span><span class="name">4級 計算</span><span class="desc">準備中</span></span>
+        </div>
+      </section>
+      <section>
+        <h2>すべての級で使える</h2>
+        <div class="cards">
+        <a class="card" href="review.html"><span class="dot" style="background:#7a5ea8"></span><span class="name">復習</span><span class="desc">学習記録から苦手を見つけて、そこだけ復習します。</span></a>
+        <a class="card" href="settings.html"><span class="dot" style="background:#6b6b6b"></span><span class="name">設定</span><span class="desc">速度・音程・文字の間隔・自動加速・サウンド。</span></a>
+        </div>
+      </section>
+      <p class="here">ほかの級: <a href="kyu-3.html">3級</a> <a href="kyu-2.html">2級</a> <a href="kyu-1.html">1級</a></p>
+    </main>
+    <script src="assets/common.js"></script>
+    <script>
+      // 選んだ級を覚える(練習ページの「← 4級」で、この級のメニューに戻れる)
+      morseSettings.save({ grade: 4 });
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 // オフラインでも使えるようにするための Service Worker。
 // 取得済みのファイルはキャッシュから即座に返し、通信できるときは裏で更新する
 // (更新は、次に開いたときに反映される)。
-const CACHE = "morse-practice-v2";
+const CACHE = "morse-practice-v3";
 const FILES = [
   "./",
   "tree.css",
@@ -55,7 +55,28 @@ const FILES = [
   "icons/review-512.png",
   "icons/settings-180.png",
   "icons/settings-192.png",
-  "icons/settings-512.png"
+  "icons/settings-512.png",
+  "assets/portal.css",
+  "kyu-4.html",
+  "kyu-3.html",
+  "kyu-2.html",
+  "kyu-1.html",
+  "manifests/kyu-4.webmanifest",
+  "manifests/kyu-3.webmanifest",
+  "manifests/kyu-2.webmanifest",
+  "manifests/kyu-1.webmanifest",
+  "icons/kyu-4-180.png",
+  "icons/kyu-4-192.png",
+  "icons/kyu-4-512.png",
+  "icons/kyu-3-180.png",
+  "icons/kyu-3-192.png",
+  "icons/kyu-3-512.png",
+  "icons/kyu-2-180.png",
+  "icons/kyu-2-192.png",
+  "icons/kyu-2-512.png",
+  "icons/kyu-1-180.png",
+  "icons/kyu-1-192.png",
+  "icons/kyu-1-512.png"
 ];
 
 self.addEventListener("install", (event) => {

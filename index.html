@@ -10,102 +10,7 @@
     <link rel="manifest" href="manifests/index.webmanifest" />
     <link rel="apple-touch-icon" href="icons/index-180.png" />
     <link rel="stylesheet" href="assets/common.css" />
-    <style>
-      main {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 1em;
-        display: block;
-        width: auto;
-      }
-      main h2 {
-        font-size: 1.05rem;
-        margin: 1.4em 0 0.2em;
-      }
-      main .note {
-        font-size: 0.85rem;
-        color: #555;
-        margin: 0.2em 0 0.6em;
-      }
-      main .lead {
-        line-height: 1.7;
-      }
-      .cards {
-        display: grid;
-        gap: 0.5em;
-      }
-      .card {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 0.1em 0.8em;
-        align-items: center;
-        padding: 0.7em 1em;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 0.8em;
-        color: inherit;
-        text-decoration: none;
-      }
-      a.card:active {
-        background: #eef2f7;
-      }
-      .card .dot {
-        grid-row: 1 / 3;
-        width: 1.1em;
-        height: 1.1em;
-        border-radius: 50%;
-      }
-      .card .name {
-        font-weight: bold;
-      }
-      .card .desc {
-        grid-column: 2;
-        font-size: 0.85rem;
-        color: #555;
-      }
-      .card.soon {
-        opacity: 0.55;
-      }
-      .card .for {
-        display: block;
-        margin-top: 0.15em;
-        font-size: 0.78rem;
-        color: #2f6f9f;
-      }
-      table.levels {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.88rem;
-        margin: 0.4em 0;
-      }
-      table.levels th,
-      table.levels td {
-        border-bottom: 1px solid #ddd;
-        padding: 0.3em 0.4em;
-        text-align: center;
-      }
-      table.levels th:first-child,
-      table.levels td:first-child {
-        text-align: left;
-        font-weight: bold;
-      }
-      details {
-        margin-top: 1.6em;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 0.6em;
-        padding: 0.5em 0.9em;
-      }
-      summary {
-        cursor: pointer;
-        font-weight: bold;
-      }
-      details p,
-      details li {
-        line-height: 1.7;
-        font-size: 0.92rem;
-      }
-    </style>
+    <link rel="stylesheet" href="assets/portal.css" />
   </head>
   <body data-page="index.html">
     <header>
@@ -115,47 +20,25 @@
       </nav>
     </header>
     <main>
-      <p class="lead">
-        モールス符号・Q符号・運用手順・計算を、分野ごとのページで練習できます。
-        よく使うページを<strong>「ホーム画面に追加」</strong>すると、アプリのように1タップで開けます。
-      </p>
+      <p class="lead">受験する級を選んでください。その級で出題される練習が表示されます。</p>
       <section>
-        <h2>モールス(3級〜1級)</h2>
-        <p class="note">モールス符号の練習です。<strong>4級では出題されません。</strong></p>
-        <div class="cards">
-        <a class="card" href="tree.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">モールスの木</span><span class="desc">モールス符号の木に、文字と記号を入れて覚えます。<span class="for">対象: 3級・2級・1級</span></span></a>
-        <a class="card" href="listen.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">聞き取り</span><span class="desc">音を聞いて文字を答えます(1・3・5文字、速度の自動加速つき)。<span class="for">対象: 3級・2級・1級</span></span></a>
-        <a class="card" href="check.html"><span class="dot" style="background:#3f6ea5"></span><span class="name">字句照合</span><span class="desc">過去問のB問題と同じ形式で、字句とモールス符号の組合せを照合します。<span class="for">対象: 2級・1級(3級は選択式)</span></span></a>
+        <h2>級を選ぶ</h2>
+        <div class="grades">
+        <a class="grade" href="kyu-4.html" style="--c:#4f9a62"><span class="g">4級</span><span class="s">計算(準備中)。モールスなどは出題されません</span></a>
+        <a class="grade" href="kyu-3.html" style="--c:#3b82b0"><span class="g">3級</span><span class="s">モールス・略符号・運用手順 / 計算(準備中)</span></a>
+        <a class="grade" href="kyu-2.html" style="--c:#c19a1f"><span class="g">2級</span><span class="s">モールス・Q符号・運用手順・字句照合 / 計算(準備中)</span></a>
+        <a class="grade" href="kyu-1.html" style="--c:#bd4b47"><span class="g">1級</span><span class="s">モールス・Q符号・運用手順・字句照合・計算</span></a>
         </div>
       </section>
       <section>
-        <h2>法規(無線電信の運用)</h2>
-        <p class="note">Q符号・略符号と、無線局運用規則の手順です。<strong>4級では出題されません。</strong></p>
-        <div class="cards">
-        <a class="card" href="qcode.html"><span class="dot" style="background:#2f8a78"></span><span class="name">Q符号・略符号</span><span class="desc">Q符号と略符号の一覧と4択クイズ(意味・モールス・音)。<span class="for">対象: 2級・1級(3級は手順の中の一部)</span></span></a>
-        <a class="card" href="procedure.html"><span class="dot" style="background:#2f8a78"></span><span class="name">運用手順</span><span class="desc">無線局運用規則の手順(呼出し・応答・非常通信など)と、通信例。<span class="for">対象: 3級・2級・1級</span></span></a>
-        </div>
-      </section>
-      <section>
-        <h2>計算(級ごと)</h2>
-        <p class="note">級ごとに別のページです。2〜4級は準備中です。</p>
-        <div class="cards">
-        <a class="card" href="keisan-1.html"><span class="dot" style="background:#d07a2a"></span><span class="name">1級 計算</span><span class="desc">1級アマチュア無線技士の計算問題(9分野)。電卓なしで解けます。<span class="for">対象: 1級</span></span></a>
-        <span class="card soon"><span class="dot" style="background:#bbb"></span><span class="name">2級 計算</span><span class="desc">準備中</span></span>
-        <span class="card soon"><span class="dot" style="background:#bbb"></span><span class="name">3級 計算</span><span class="desc">準備中</span></span>
-        <span class="card soon"><span class="dot" style="background:#bbb"></span><span class="name">4級 計算</span><span class="desc">準備中</span></span>
-        </div>
-      </section>
-      <section>
-        <h2>記録・設定</h2>
-        <p class="note">すべての級で使えます。学習記録から苦手を復習し、音の速さなどを決めます。</p>
+        <h2>すべての級で使える</h2>
         <div class="cards">
         <a class="card" href="review.html"><span class="dot" style="background:#7a5ea8"></span><span class="name">復習</span><span class="desc">学習記録から苦手を見つけて、そこだけ復習します。</span></a>
         <a class="card" href="settings.html"><span class="dot" style="background:#6b6b6b"></span><span class="name">設定</span><span class="desc">速度・音程・文字の間隔・自動加速・サウンド。</span></a>
         </div>
       </section>
-      <section>
-        <h2>級ごとの目安(何を練習するか)</h2>
+      <details>
+        <summary>級ごとの出題の目安</summary>
         <table class="levels">
           <thead>
             <tr><th>級</th><th>モールス</th><th>Q符号・略符号</th><th>運用手順</th><th>計算</th></tr>
@@ -172,12 +55,12 @@
           令和6年〜8年の過去問(1級・2級の法規)と、公式のCBT例題(3級・4級の法規、各3組)で確認しました。
           3級・4級は本試験の過去問が公開されていないため、例題の範囲での確認です。
         </p>
-      </section>
+      </details>
       <details>
         <summary>ホーム画面に追加する方法</summary>
         <p><strong>iPhone / iPad(Safari)</strong></p>
         <ol>
-          <li>追加したいページを開く(例: 「聞き取り」)</li>
+          <li>追加したいページを開く(例: 「3級」のページ)</li>
           <li>下の共有ボタン(□に↑)をタップ</li>
           <li>「ホーム画面に追加」をタップして、「追加」</li>
         </ol>
@@ -188,8 +71,8 @@
           <li>「ホーム画面に追加」(または「アプリをインストール」)をタップ</li>
         </ol>
         <p>
-          アイコンは、ページごとに色と模様が違います(模様はページの頭文字のモールス符号です)。
-          追加したページから、ヘッダーのメニューで他のページにも移動できます。
+          受験する級のページ(「3級」など)を追加するのがおすすめです。アプリの中で、その級の練習ページや、
+          ほかの級へ移動できます。練習ページだけを追加することもできます(アイコンは色と模様が違います)。
         </p>
         <p class="note">
           ご注意: 学習記録と設定は、この端末のブラウザに保存されます。iPhone では、
