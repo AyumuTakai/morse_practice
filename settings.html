@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>設定 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="設定" />
+    <link rel="manifest" href="manifests/settings.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/settings-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      #settings-view {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 1em;
+      
+      }
+      #settings-view .row {
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 0.5em 1em;
+              padding: 0.8em 0;
+              border-bottom: 1px solid #d5dde6;
+      
+      }
+      #settings-view .row > label {
+              min-width: 6em;
+              font-weight: bold;
+      
+      }
+      #settings-view select,
+      #settings-view button {
+              height: auto;
+              font-size: 1rem;
+              padding: 0.5em 1em;
+              margin: 0;
+              border-radius: 0.6em;
+              border: 1px solid lightslategray;
+              background-color: white;
+              cursor: pointer;
+      
+      }
+      #settings-view button.active {
+              background-color: lightslategray;
+              color: white;
+      
+      }
+      #settings-view .note {
+              font-size: 0.85rem;
+              color: #555;
+              flex-basis: 100%;
+      
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="settings.html">
+    <header>
+      <h1>設定</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <div id="settings-view">
+      <div class="row">
+        <label for="wpm">速度</label>
+        <select id="wpm">
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="15" selected>15</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+        </select>
+        <span>WPM</span>
+        <span class="note">1分間に送れる標準語(PARIS)の数。数字が小さいほどゆっくりです。</span>
+      </div>
+      <div class="row">
+        <label for="tone">音程</label>
+        <select id="tone">
+          <option value="500">500</option>
+          <option value="600" selected>600</option>
+          <option value="700">700</option>
+          <option value="800">800</option>
+        </select>
+        <span>Hz</span>
+      </div>
+      <div class="row">
+        <label for="gap">文字の間隔</label>
+        <select id="gap">
+          <option value="1" selected>標準</option>
+          <option value="2">2倍</option>
+          <option value="3">3倍</option>
+        </select>
+        <span class="note">文字は標準の速さのまま、文字と文字の間だけを広げます(ファーンズワース方式)。</span>
+      </div>
+      <div class="row">
+        <label>自動加速</label>
+        <button id="ramp-toggle">OFF</button>
+        <span class="note">聞き取りで5問続けて正解するたびに、速度を1 WPM 上げます(上限30 WPM)。</span>
+      </div>
+      <div class="row">
+        <label>サウンド</label>
+        <button id="sound-toggle" class="active">ON</button>
+        <span class="note">アルファベットの木のマスを選ぶと、その符号の音が鳴ります。</span>
+      </div>
+      <div class="row">
+        <label>確認</label>
+        <button id="settings-play">▶ 再生(PARIS)</button>
+        <button id="sound-stop">停止</button>
+        <span class="note">いまの速度と音程で試し聴きできます。</span>
+      </div>
+    </div>
+    <script src="assets/common.js"></script>
+    <script>
+      const saved = morseSettings.load();
+      const wpmSelect = document.getElementById("wpm");
+      const toneSelect = document.getElementById("tone");
+      if (saved.wpm) wpmSelect.value = saved.wpm;
+      if (saved.tone) toneSelect.value = saved.tone;
+      wpmSelect.addEventListener("change", () => morseSettings.save({ wpm: wpmSelect.value }));
+      toneSelect.addEventListener("change", () => morseSettings.save({ tone: toneSelect.value }));
+      const gapSelect = document.getElementById("gap");
+      if (saved.gap) gapSelect.value = saved.gap;
+      gapSelect.addEventListener("change", () => morseSettings.save({ gap: gapSelect.value }));
+      const rampToggle = document.getElementById("ramp-toggle");
+      const showRamp = () => {
+        const on = !!morseSettings.load().ramp;
+        rampToggle.textContent = on ? "ON" : "OFF";
+        rampToggle.classList.toggle("active", on);
+      };
+      showRamp();
+      rampToggle.addEventListener("click", () => {
+        morseSettings.save({ ramp: !morseSettings.load().ramp });
+        showRamp();
+      });
+      let treeSound = saved.sound !== false;
+      const soundToggle = document.getElementById("sound-toggle");
+      const showSound = () => {
+        soundToggle.textContent = treeSound ? "ON" : "OFF";
+        soundToggle.classList.toggle("active", treeSound);
+      };
+      showSound();
+      soundToggle.addEventListener("click", () => {
+        treeSound = !treeSound;
+        showSound();
+        morseSettings.save({ sound: treeSound });
+      });
+      // 設定の確認用(PARIS を再生)
+      document.getElementById("settings-play").addEventListener("click", () =>
+        morseAudio.play("・－－・ ・－ ・－・ ・・ ・・・")
+      );
+      document.getElementById("sound-stop").addEventListener("click", () => morseAudio.stop());
+    </script>
+  </body>
+</html>

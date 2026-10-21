@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>モールスの木 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="モールスの木" />
+    <link rel="manifest" href="manifests/tree.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/tree-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      @media (max-width: 600px) {
+        .row-container.buttons {
+                  height: auto;
+                  padding: 1em 0;
+                  gap: 0.5em;
+          
+        }
+        .row-container.buttons button {
+                  font-size: 1rem;
+                  height: 3em;
+                  width: auto;
+                  flex: 1;
+                  max-width: 8em;
+                  margin: 0;
+          
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="tree.html">
+    <header>
+      <h1>モールスの木</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <div id="alphabet-view">
+      <div class="tree-wrap" id="tree-wrap"><div id="tree" class="tree" data-fit="1"></div></div>
+    <div class="row-container buttons" style="bottom: 0">
+      <button style="bottom: 10%; right: 10%" id="reset">Reset</button>
+      <button style="bottom: 10%; left: 10%" id="show">Show</button>
+      <button style="bottom: 10%; left: 20%" id="check">Check</button>
+    </div>
+    </div>
+    <script src="assets/common.js"></script>
+    <script src="assets/tree-lib.js"></script>
+    <script>
+      buildTree(document.getElementById("tree"));
+      relayoutTrees();
+      // マスを選ぶと、その符号の音が鳴る(設定の「サウンド」で切り替え)
+      document.getElementById("tree").addEventListener("focusin", (e) => {
+        const code = e.target.dataset && e.target.dataset.code;
+        if (morseSettings.load().sound !== false && code && e.target.dataset.char !== "") morseAudio.play(code);
+      });
+
+      const inputs = document.querySelectorAll("input");
+      const showButton = document.querySelector("#show");
+      const checkButton = document.querySelector("#check");
+      const resetButton = document.querySelector("#reset");
+      showButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          input.value = input.dataset.char;
+        });
+      });
+      checkButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          const ok = input.value.toUpperCase() == input.dataset.char || input.value.toUpperCase() == input.dataset.alt;
+          if (ok) {
+            input.classList.add("correct");
+            input.classList.remove("incorrect");
+          } else {
+            input.classList.add("incorrect");
+            input.classList.remove("correct");
+          }
+          // 入力のあった文字・記号だけを学習記録に残す(空欄は未挑戦として数えない)
+          if (input.dataset.char && input.value !== "") morseStats.record("c:" + input.dataset.char, ok);
+        });
+      });
+      resetButton.addEventListener("click", () => {
+        inputs.forEach((input) => {
+          input.value = "";
+          input.classList.remove("correct", "incorrect");
+        });
+      });
+      //   inputs.forEach((input) => {
+      //     input.value = input.dataset.char;
+      //   });
+    
+    </script>
+  </body>
+</html>

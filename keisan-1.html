@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1級 計算 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="1級計算" />
+    <link rel="manifest" href="manifests/keisan-1.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/keisan-1-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      #calc-view {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 1em;
+      
+      }
+      #calc-view button {
+              height: auto;
+              font-size: 1rem;
+              padding: 0.5em 1em;
+              margin: 0 0.3em 0.5em 0;
+              border-radius: 2em;
+              border: 1px solid lightslategray;
+              background-color: transparent;
+              cursor: pointer;
+      
+      }
+      #calc-view button:disabled {
+              opacity: 0.4;
+              cursor: default;
+      
+      }
+      #calc-view button.on,
+      #calc-view button.primary {
+              background-color: lightslategray;
+              color: white;
+      
+      }
+      #calc-view .label {
+              font-size: 0.8rem;
+              font-weight: bold;
+              color: #556;
+              margin: 1em 0 0.3em;
+      
+      }
+      #calc-view .note {
+              font-size: 0.85rem;
+              color: #555;
+              margin: 0.3em 0;
+      
+      }
+      #calc-view .chips {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.2em;
+      
+      }
+      #calc-view .chips button {
+              padding: 0.3em 0.9em;
+              font-size: 0.9rem;
+              margin: 0;
+      
+      }
+      #calc-view .card {
+              background: white;
+              border: 1px solid #ccc;
+              border-radius: 1em;
+              padding: 1em;
+              margin-top: 1em;
+      
+      }
+      #calc-view .tag {
+              display: inline-block;
+              font-size: 0.75rem;
+              font-weight: bold;
+              color: lightslategray;
+              border: 1px solid lightslategray;
+              padding: 0 0.6em;
+              border-radius: 0.3em;
+      
+      }
+      #calc-view .q {
+              margin: 0.6em 0 0.9em;
+              font-size: 1.05rem;
+              line-height: 1.7;
+      
+      }
+      #calc-view .m {
+              font-family: monospace;
+              font-size: 0.95em;
+      
+      }
+      #calc-view .ansrow {
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 0.6em;
+      
+      }
+      #calc-view .ansrow label {
+              font-weight: bold;
+      
+      }
+      #calc-view .ansrow input {
+              font-family: monospace;
+              font-size: 1.3rem;
+              width: 9.5rem;
+              height: auto;
+              padding: 0.3em 0.5em;
+              border: 2px solid #aab;
+              border-radius: 0.4em;
+              text-align: right;
+      
+      }
+      #calc-view .unit {
+              font-family: monospace;
+              font-size: 1.05rem;
+      
+      }
+      #calc-view .tol {
+              margin: 0.5em 0 0;
+              font-size: 0.8rem;
+              color: #666;
+      
+      }
+      #calc-view .btns {
+              margin-top: 0.9em;
+      
+      }
+      #calc-view .result {
+              margin-top: 0.9em;
+              border-radius: 0.5em;
+              padding: 0.6em 0.9em;
+              font-weight: bold;
+      
+      }
+      #calc-view .result.ok {
+              background: #d9f5e6;
+              color: #1d7a4a;
+      
+      }
+      #calc-view .result.ng {
+              background: #fbe0dc;
+              color: #b0352a;
+      
+      }
+      #calc-view .result .num {
+              font-family: monospace;
+      
+      }
+      #calc-view .sol {
+              margin-top: 0.8em;
+              border: 1px solid #ccd;
+              border-radius: 0.5em;
+              padding: 0.6em 0.9em;
+              background: #fafbfd;
+      
+      }
+      #calc-view .sol h3 {
+              margin: 0 0 0.3em;
+              font-size: 0.8rem;
+              color: #556;
+      
+      }
+      #calc-view .sol ol {
+              margin: 0;
+              padding-left: 1.4em;
+              line-height: 1.7;
+      
+      }
+      #calc-view .total {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.3em 1.2em;
+      
+      }
+      #calc-view .total b {
+              font-family: monospace;
+              font-size: 1.15rem;
+      
+      }
+      #calc-view .bars {
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+              gap: 0.4em 1.2em;
+              margin-top: 0.5em;
+      
+      }
+      #calc-view .bar {
+              display: grid;
+              grid-template-columns: 7em 1fr 4.5em;
+              align-items: center;
+              gap: 0.5em;
+              font-size: 0.85rem;
+      
+      }
+      #calc-view .bar .track {
+              height: 8px;
+              background: #dde4ec;
+              border-radius: 4px;
+              overflow: hidden;
+      
+      }
+      #calc-view .bar .fill {
+              display: block;
+              height: 100%;
+              background: lightslategray;
+      
+      }
+      #calc-view .bar .v {
+              font-family: monospace;
+              text-align: right;
+              color: #666;
+              font-size: 0.8rem;
+      
+      }
+      #calc-view details {
+              margin-top: 1em;
+              background: white;
+              border: 1px solid #ccc;
+              border-radius: 0.6em;
+              padding: 0.5em 0.9em;
+      
+      }
+      #calc-view summary {
+              cursor: pointer;
+              font-weight: bold;
+      
+      }
+      #calc-view .tblwrap {
+              overflow-x: auto;
+              margin-top: 0.5em;
+      
+      }
+      #calc-view table {
+              border-collapse: collapse;
+              font-size: 0.88rem;
+              min-width: 100%;
+      
+      }
+      #calc-view th,
+      #calc-view td {
+              border-bottom: 1px solid #ddd;
+              padding: 0.25em 0.7em;
+              text-align: left;
+              white-space: nowrap;
+      
+      }
+      #calc-view td.n {
+              font-family: monospace;
+      
+      }
+      @media (max-width: 600px) {
+        #calc-view {
+                  padding: 0.5em;
+          
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="keisan-1.html">
+    <header>
+      <h1>1級 計算</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <div id="calc-view">
+      <div class="toolbar" id="calc-grades"></div>
+      <p class="note" id="calc-intro"></p>
+      <p class="label">出題範囲</p>
+      <div class="chips" id="calc-chips"></div>
+      <div class="card">
+        <span class="tag" id="calc-cat"></span>
+        <p class="q" id="calc-q"></p>
+        <form id="calc-form" class="ansrow" autocomplete="off">
+          <label for="calc-ans">答え</label>
+          <span id="calc-input-box"></span>
+          <span class="unit" id="calc-unit"></span>
+        </form>
+        <p class="tol" id="calc-tol"></p>
+        <div class="btns">
+          <button id="calc-check" class="primary" type="button">判定する</button>
+          <button id="calc-giveup" type="button">答えを見る</button>
+          <button id="calc-next" class="primary" type="button" hidden>次の問題</button>
+        </div>
+        <div id="calc-out"></div>
+      </div>
+      <p class="label">成績</p>
+      <div class="total">
+        <span>今回 出題 <b id="calc-tn">0</b></span>
+        <span>正解 <b id="calc-tok">0</b></span>
+        <span>正答率 <b id="calc-trate">-</b></span>
+      </div>
+      <div class="bars" id="calc-bars"></div>
+      <p class="note">分野ごとの数字は、これまでの通算(正解数/解答数)です。</p>
+      <details id="calc-ref">
+        <summary>dB早見表(電卓なしで使う)</summary>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>倍率</th><th>電力 (10log)</th><th>電圧・電流 (20log)</th><th>覚え方</th></tr></thead>
+        <tbody>
+          <tr><td class="n">2</td><td class="n">3 dB</td><td class="n">6 dB</td><td>log₁₀2 = 0.3</td></tr>
+          <tr><td class="n">4</td><td class="n">6 dB</td><td class="n">12 dB</td><td>2×2</td></tr>
+          <tr><td class="n">5</td><td class="n">7 dB</td><td class="n">14 dB</td><td>10÷2</td></tr>
+          <tr><td class="n">8</td><td class="n">9 dB</td><td class="n">18 dB</td><td>2×2×2</td></tr>
+          <tr><td class="n">10</td><td class="n">10 dB</td><td class="n">20 dB</td><td>桁が1つ増えるごとに加算</td></tr>
+          <tr><td class="n">100</td><td class="n">20 dB</td><td class="n">40 dB</td><td>10×10</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:8px">掛け算は dB の足し算、割り算は引き算。dBm は 1 mW、dBμV は 1 μV を 0 dB の基準にします。</p>
+      </details>
+    </div>
+    <script src="assets/common.js"></script>
+    <script src="assets/data-keisan.js"></script>
+    <script>
+
+      // 計算: アマチュア無線技士の計算問題。出題ロジックは ama1-keisan.html から移植(内容は変更していない)。
+      (() => {
+        /* ===== 出題ロジック(ama1-keisan.html から移植)===== */
+  /* CATS(分野の名前)と ORDER(分野の並び)は data-keisan.js */
+
+  function ri(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function fmt(n){ return Number.isInteger(n) ? String(n) : String(+n.toFixed(2)); }
+  function m(s){ return '<span class="m">'+s+'</span>'; }
+
+  var TP = {1:0,2:3,4:6,5:7,8:9};
+  var TV = {1:0,2:6,4:12,5:14,8:18};
+  var EXP_P = {2:'2倍 = 3 dB',4:'4 = 2×2 なので 3+3 = 6 dB',5:'5 = 10÷2 なので 10−3 = 7 dB',8:'8 = 2×2×2 なので 3×3 = 9 dB'};
+  var EXP_V = {2:'2倍 = 6 dB',4:'4 = 2×2 なので 6+6 = 12 dB',5:'5 = 10÷2 なので 20−6 = 14 dB',8:'8 = 2×2×2 なので 6×3 = 18 dB'};
+
+  function pickMB(){
+    var mm,b;
+    do { mm = pick([1,2,4,5,8]); b = ri(0,3); } while (mm===1 && b===0);
+    return {m:mm,b:b};
+  }
+  function ratioSteps(mm,b,kind){
+    var base = kind==='p'?10:20, exp = kind==='p'?EXP_P:EXP_V, s=[];
+    if (mm!==1) s.push(m(mm)+' → '+exp[mm]);
+    if (b>0) s.push(m('10<sup>'+b+'</sup>')+' → '+base+' dB × '+b+' = '+(base*b)+' dB');
+    return s;
+  }
+
+  var gen = {};
+
+  gen.db = function(){
+    var t = ri(0,4), x = pickMB(), mm = x.m, b = x.b, ratio = mm*Math.pow(10,b);
+    var steps;
+    if (t===0){ // 電力比 -> dB
+      var db = TP[mm]+10*b;
+      steps = ['電力なので 10log を使う。'+m(ratio+' = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup>')].concat(ratioSteps(mm,b,'p'));
+      steps.push('足し算: '+m(db+' dB'));
+      return {text:'電力が '+m(ratio)+' 倍になった。これをデシベルで表すといくらか。', unit:'dB', ans:db, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dB まで正解)'};
+    }
+    if (t===1){ // 電圧比 -> dB
+      var dv = TV[mm]+20*b;
+      steps = ['電圧なので 20log を使う。'+m(ratio+' = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup>')].concat(ratioSteps(mm,b,'v'));
+      steps.push('足し算: '+m(dv+' dB'));
+      return {text:'電圧が '+m(ratio)+' 倍になった。これをデシベルで表すといくらか。', unit:'dB', ans:dv, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dB まで正解)'};
+    }
+    if (t===2){ // dB -> 電力比
+      var dd = TP[mm]+10*b;
+      steps = [m(dd+' dB')+' を '+m(TP[mm]+' dB')+' と '+m((10*b)+' dB')+' に分ける。', m(TP[mm]+' dB')+' → '+(mm===1?'1倍':EXP_P[mm].split(' = ')[0]+'は'+mm+'倍の意味'), m((10*b)+' dB')+' → '+m('10<sup>'+b+'</sup>')+' 倍', '掛け算: '+m(mm+' × 10<sup>'+b+'</sup> = '+ratio)+' 倍'];
+      return {text:'電力の利得が '+m(dd+' dB')+' のとき、電力は何倍か。', unit:'倍', ans:ratio, abs:0, rel:0.01, steps:steps, tolText:'整数で入力(±1% まで正解)'};
+    }
+    if (t===3){ // mW -> dBm
+      var dbm = TP[mm]+10*b;
+      steps = ['dBm は 1 mW を 0 dBm とした電力の dB 値。10log を使う。'+m(ratio+' mW = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup> mW')].concat(ratioSteps(mm,b,'p'));
+      steps.push('足し算: '+m(dbm+' dBm'));
+      return {text:'電力 '+m(ratio+' mW')+' は何 dBm か。', unit:'dBm', ans:dbm, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dBm まで正解)'};
+    }
+    // μV -> dBμV
+    var dbuv = TV[mm]+20*b;
+    steps = ['dBμV は 1 μV を 0 dBμV とした電圧の dB 値。20log を使う。'+m(ratio+' μV = '+(mm===1?'':mm+' × ')+'10<sup>'+b+'</sup> μV')].concat(ratioSteps(mm,b,'v'));
+    steps.push('足し算: '+m(dbuv+' dBμV'));
+    return {text:'電圧 '+m(ratio+' μV')+' は何 dBμV か。', unit:'dBμV', ans:dbuv, abs:0.5, rel:0, steps:steps, tolText:'整数で入力(±0.5 dBμV まで正解)'};
+  };
+
+  gen.amp = function(){
+    var mm,b;
+    do { mm = pick([1,2,4,5,8]); b = ri(0,2); } while (mm===1 && b===0);
+    var G = TV[mm]+20*b, mult = mm*Math.pow(10,b), R1 = pick([1,2,5,10]), R2 = R1*mult;
+    var steps = ['反転増幅器の電圧利得は '+m('A = R₂ / R₁')+'(R₂ が帰還抵抗)。','利得 '+m(G+' dB')+' は電圧なので 20log。'];
+    steps = steps.concat(ratioSteps(mm,b,'v'));
+    steps.push('電圧の倍率は '+m(mm+' × 10<sup>'+b+'</sup> = '+mult)+' 倍。');
+    steps.push(m('R₂ = R₁ × '+mult+' = '+R1+' × '+mult+' = '+R2+' kΩ'));
+    return {text:'反転増幅器の電圧利得が '+m(G+' dB')+'、入力抵抗 R₁ が '+m(R1+' kΩ')+' のとき、帰還抵抗 R₂ は何 kΩ か。', unit:'kΩ', ans:R2, abs:0, rel:0.01, steps:steps, tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.am = function(){
+    if (Math.random()<0.5){
+      var Vc = pick([40,50,80,100]), mi = pick([0.3,0.4,0.5,0.6,0.8]), Vmax = +(Vc*(1+mi)).toFixed(2);
+      return {text:'搬送波の振幅が '+m(Vc+' V')+'、振幅変調波の最大振幅が '+m(fmt(Vmax)+' V')+' であった。変調度は何 % か。', unit:'%', ans:mi*100, abs:0.5, rel:0,
+        steps:['変調波の最大振幅は '+m('Vmax = Vc(1 + m)'),m('1 + m = '+fmt(Vmax)+' / '+Vc+' = '+fmt(+(Vmax/Vc).toFixed(3))),m('m = '+fmt(mi)+' → '+fmt(mi*100)+' %')],
+        tolText:'整数で入力(±0.5% まで正解)'};
+    }
+    var Vc2 = pick([40,80,120]), Vr = 0.75*Vc2;
+    return {text:'搬送波の振幅(最大値)が '+m(Vc2+' V')+' の単一正弦波で振幅変調した。変調波(搬送波+側帯波)の実効値が '+m(Vr+' V')+' のとき、変調度は何 % か。', unit:'%', ans:50, abs:0.5, rel:0,
+      steps:['変調波の実効値は '+m('V = (Vc/√2)·√(1 + m²/2)')+'(側帯波の電力が加わる)。',
+        m('V/Vc = '+Vr+' / '+Vc2+' = 0.75')+' なので両辺を2乗して2倍: '+m('2×0.75² = 1.125 = 1 + m²/2'),
+        m('m²/2 = 0.125 → m² = 0.25 → m = 0.5'),m('変調度 50 %')],
+      tolText:'整数で入力(±0.5% まで正解)'};
+  };
+
+  gen.qw = function(){
+    var pairs = [[75,50],[100,50],[50,100],[75,150],[50,75],[200,100],[300,150],[100,60],[75,100]];
+    if (Math.random()<0.7){
+      var p = pick(pairs), Z=p[0], Z0=p[1], Ra = Z0*Z0/Z;
+      return {text:'特性インピーダンス '+m(Z+' Ω')+' の給電線に、特性インピーダンス '+m(Z0+' Ω')+' の λ/4 整合回路を接続して整合をとる。アンテナの入力インピーダンス Ra は何 Ω か。', unit:'Ω', ans:Ra, abs:0.6, rel:0.02,
+        steps:['λ/4 整合の条件: '+m('Z₀² = Z × Ra'),m('Ra = Z₀² / Z = '+Z0+'² / '+Z+' = '+(Z0*Z0)+' / '+Z+' = '+fmt(Ra)+' Ω')],
+        tolText:'割り切れない場合は小数第1位まで(±2% まで正解)'};
+    }
+    var set = pick([[75,300,150],[50,200,100],[100,25,50],[50,50,50],[200,50,100]]);
+    return {text:'特性インピーダンス '+m(set[0]+' Ω')+' の給電線と入力インピーダンス '+m(set[1]+' Ω')+' のアンテナを λ/4 整合回路で整合させる。整合回路の特性インピーダンス Z₀ は何 Ω か。', unit:'Ω', ans:set[2], abs:0.6, rel:0.02,
+      steps:['λ/4 整合の条件: '+m('Z₀² = Z × Ra'),m('Z₀² = '+set[0]+' × '+set[1]+' = '+(set[0]*set[1])),m('Z₀ = √'+(set[0]*set[1])+' = '+set[2]+' Ω')],
+      tolText:'数値のみ(±2% まで正解)'};
+  };
+
+  gen.ant = function(){
+    var I = pick([1,1.5,2,3,5]), Rr = 36, Rt = pick([40,45,48,60]);
+    var P = I*I*Rr, eff = Rr/Rt*100;
+    if (Math.random()<0.5){
+      return {text:'λ/4 垂直接地アンテナに '+m(fmt(I)+' A')+' の電流を流した。放射抵抗が '+m(Rr+' Ω')+'、損失抵抗を含む実効抵抗が '+m(Rt+' Ω')+' のとき、放射電力は何 W か。', unit:'W', ans:P, abs:0.5, rel:0.01,
+        steps:['放射電力は放射抵抗で消費される電力: '+m('P = I² × Rr'),m('P = '+fmt(I)+'² × '+Rr+' = '+fmt(I*I)+' × '+Rr+' = '+fmt(P)+' W'),'(実効抵抗 '+Rt+' Ω はここでは使わない)'],
+        tolText:'数値のみ(±1% まで正解)'};
+    }
+    return {text:'λ/4 垂直接地アンテナで、放射抵抗が '+m(Rr+' Ω')+'、損失抵抗を含む実効抵抗が '+m(Rt+' Ω')+' である。このアンテナの効率は何 % か。', unit:'%', ans:eff, abs:0.6, rel:0,
+      steps:['効率 = 放射電力 ÷ 供給電力。電流が共通なので抵抗の比になる。',m('η = Rr / R = '+Rr+' / '+Rt+' = '+fmt(+(Rr/Rt).toFixed(3))),m('η = '+fmt(+eff.toFixed(1))+' %')],
+      tolText:'整数で入力(±0.6% まで正解)'};
+  };
+
+  gen.rect = function(){
+    var k = pick([30,40,50,60,100]), n = pick([2,3,4]);
+    return {text:'コンデンサ入力形の全波整流回路で、無負荷時の出力電圧が '+m(k+'√2 V')+' であった。変圧器の巻数比(一次:二次)が '+m(n+':1')+' のとき、一次側の電圧の実効値は何 V か。', unit:'V', ans:k*n, abs:0, rel:0.01,
+      steps:['コンデンサ入力形の無負荷出力は、二次電圧の最大値に等しい: '+m('Vout = √2 × V₂(実効値)'),m('V₂ = '+k+'√2 / √2 = '+k+' V'),'一次電圧 = 二次電圧 × 巻数比: '+m('V₁ = '+k+' × '+n+' = '+(k*n)+' V')],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.cap = function(){
+    var C1,C2,V1,V2,i=0;
+    do {
+      C1 = pick([2,3,4,6]); C2 = pick([1,2,3,4,6,8,9,12]); V2 = pick([2,3,4,5,6]);
+      V1 = V2*(C1+C2)/C1; i++;
+    } while ((!Number.isInteger(V1) || V1>30 || V1<=V2) && i<300);
+    if (!Number.isInteger(V1)){ C1=3;C2=6;V2=4;V1=12; }
+    return {text:'静電容量 C₁ = '+m(C1+' μF')+' のコンデンサを '+m(V1+' V')+' に充電した。次に、これを電荷のない C₂ に並列につなぐと、端子電圧が '+m(V2+' V')+' になった。C₂ は何 μF か。', unit:'μF', ans:C2, abs:0, rel:0.01,
+      steps:['接続の前後で電荷の総量は変わらない(電荷保存)。',m('C₁V₁ = (C₁ + C₂)V₂'),m(C1+' × '+V1+' = '+(C1*V1)+' = ('+C1+' + C₂) × '+V2),m(C1+' + C₂ = '+(C1*V1)+' / '+V2+' = '+fmt(C1*V1/V2)),m('C₂ = '+fmt(C1*V1/V2)+' − '+C1+' = '+C2+' μF')],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.pf = function(){
+    var t = pick([[3,4],[4,3]]), k = pick([5,10,15,20]), R = t[0]*k, X = t[1]*k, Z = 5*k;
+    if (Math.random()<0.5){
+      return {text:'抵抗 R = '+m(R+' Ω')+' と誘導性リアクタンス X = '+m(X+' Ω')+' の直列回路の力率は何 % か。', unit:'%', ans:R/Z*100, abs:0.5, rel:0,
+        steps:['インピーダンスの大きさ: '+m('Z = √(R² + X²) = √('+(R*R)+' + '+(X*X)+') = √'+(Z*Z)+' = '+Z+' Ω'),m('力率 = R / Z = '+R+' / '+Z+' = '+fmt(R/Z)),m(fmt(R/Z*100)+' %')],
+        tolText:'整数で入力(±0.5% まで正解)'};
+    }
+    return {text:'抵抗 R = '+m(R+' Ω')+' と誘導性リアクタンス X = '+m(X+' Ω')+' の直列回路のインピーダンスの大きさ Z は何 Ω か。', unit:'Ω', ans:Z, abs:0, rel:0.01,
+      steps:[m('Z = √(R² + X²)'),m('R² = '+(R*R)+'、X² = '+(X*X)+' → 合計 '+(Z*Z)),m('Z = √'+(Z*Z)+' = '+Z+' Ω'),'3:4:5 の直角三角形(の何倍か)に気づくと早い。'],
+      tolText:'数値のみ(±1% まで正解)'};
+  };
+
+  gen.res = function(){
+    var t = ri(0,5), P2 = 2*Math.PI;
+    var f = pick([3.5,5,7,10,14]), L = pick([2,5,10,20]);
+    var XL = P2*f*L, tq = XL/pick([20,25,40,50]), NICE = [1,2,4,5,8,10,20,25,40,50,100], R = NICE.reduce(function(a,b){ return Math.abs(b-tq)<Math.abs(a-tq)?b:a; }), Q = XL/R;
+    var E = pick([0.1,0.2,0.5,1]);
+    var w = P2*f;                       /* ω を 10⁶ rad/s 単位で */
+    var Ct = 1e6/(w*XL);                /* 合成容量 [pF] */
+    function curStr(a){ return a<0.1 ? fmt(+(a*1000).toFixed(1))+' mA' : fmt(+a.toFixed(2))+' A'; }
+    var xlStep = m('XL = 2πfL ≈ 6.28 × '+f+' × '+L+' ≈ '+fmt(+XL.toFixed(1))+' Ω')+'(f[MHz] × L[μH] は 10⁶ と 10⁻⁶ が打ち消し合うので、数値をそのまま掛ける)';
+    var ctStep = [xlStep,
+      m('ω = 2πf ≈ 6.28 × '+f+' × 10⁶ ≈ '+fmt(+w.toFixed(1))+' × 10⁶ [rad/s]'),
+      m('Ct = 1 / (ω × XL) = 1 / ('+fmt(+w.toFixed(1))+' × '+fmt(+XL.toFixed(1))+' × 10⁶) ≈ '+fmt(+Ct.toFixed(1))+' pF')];
+    var head = '直列共振回路(L = '+m(L+' μH')+'、R = '+m(R+' Ω')+')が '+m(f+' MHz')+' で共振している。';
+    if (t===0){
+      return {text:head.replace('が','の共振周波数が').replace('で共振している。','である。')+'尖鋭度 Q はいくつか。', unit:'', ans:Q, abs:0.5, rel:0.05,
+        steps:[xlStep, m('Q = XL / R = '+fmt(+XL.toFixed(1))+' / '+R+' ≈ '+fmt(+Q.toFixed(1)))], tolText:'整数で入力(±5% まで正解)'};
+    }
+    if (t===1 || t===2){
+      var V = E*XL/R, coil = (t===1);
+      return {text:head+'電源電圧が '+m(E+' V')+' のとき、'+(coil?'コイル':'コンデンサ')+'の両端電圧は何 V か。', unit:'V', ans:V, abs:0.05, rel:0.05,
+        steps:[xlStep, '共振では XL と XC が打ち消し合い、'+m('Z = R = '+R+' Ω'), m('I = E / R = '+E+' / '+R+' ≈ '+curStr(E/R)),
+          coil ? m('VL = I × XL ≈ '+curStr(E/R)+' × '+fmt(+XL.toFixed(1))+' Ω ≈ '+fmt(+V.toFixed(1))+' V') : '共振では '+m('XC = XL')+' なので、'+m('VC = I × XC ≈ '+curStr(E/R)+' × '+fmt(+XL.toFixed(1))+' Ω ≈ '+fmt(+V.toFixed(1))+' V'),
+          '近道: '+m('Q = XL / R ≈ '+fmt(+Q.toFixed(1)))+' を先に出して '+m('V = Q × E')+' でも同じ。'],
+        tolText:'小数で入力(±5% まで正解)'};
+    }
+    var Lq = pick([2,5,10,20]), fq = pick([3.5,5,7,10,14]);
+    if (t===3){
+      var XLq = P2*fq*Lq, wq = P2*fq, Cq = 1e6/(wq*XLq);
+      return {text:'インダクタンス '+m(Lq+' μH')+' のコイルと直列のコンデンサで '+m(fq+' MHz')+' に共振させたい。必要な静電容量は何 pF か。', unit:'pF', ans:Cq, abs:1, rel:0.05,
+        steps:[m('XL = 2πfL ≈ 6.28 × '+fq+' × '+Lq+' ≈ '+fmt(+XLq.toFixed(1))+' Ω'), m('ω = 2πf ≈ '+fmt(+wq.toFixed(1))+' × 10⁶ [rad/s]'),
+          '共振条件 '+m('XL = XC = 1/(ωC)')+' から '+m('C = 1 / (ω × XL)'),
+          m('C = 1 / ('+fmt(+wq.toFixed(1))+' × '+fmt(+XLq.toFixed(1))+' × 10⁶) F'),
+          m('= (10⁶ / '+fmt(+(wq*XLq).toFixed(0))+') × 10⁻¹² F ≈ '+fmt(+Cq.toFixed(0))+' pF'),
+          '(1/(x × 10⁶) = (10⁶/x) × 10⁻¹² なので、10⁶ を x で割った数がそのまま pF になる)'],
+        tolText:'整数で入力(±5% まで正解)'};
+    }
+    var XLv = P2*fq*Lq, wv = P2*fq, Ctv = 1e6/(wv*XLv), Cf = Math.max(5, Math.round(Ctv*pick([0.2,0.3,0.4,0.5])/5)*5), Cv = Ctv - Cf;
+    if (t===4){
+      return {text:'固定コンデンサ C = '+m(Cf+' pF')+' と可変コンデンサ Cv を並列にし、コイル '+m(Lq+' μH')+' と直列にして '+m(fq+' MHz')+' に共振させる。Cv は何 pF か。', unit:'pF', ans:Cv, abs:2, rel:0.08,
+        steps:[m('XL = 2πfL ≈ 6.28 × '+fq+' × '+Lq+' ≈ '+fmt(+XLv.toFixed(1))+' Ω'), m('ω ≈ '+fmt(+wv.toFixed(1))+' × 10⁶ [rad/s]'),
+          m('合成容量 Ct = 1 / (ω × XL) ≈ '+fmt(+Ctv.toFixed(0))+' pF'),
+          '並列は容量が足し算: '+m('Ct = C + Cv'),
+          m('Cv = Ct − C ≈ '+fmt(+Ctv.toFixed(0))+' − '+Cf+' ≈ '+fmt(+Cv.toFixed(0))+' pF'),
+          '(概算で数 pF ずれても、近い値なら正解)'],
+        tolText:'整数で入力(±8% または ±2 pF まで正解)'};
+    }
+    var f0 = pick([1000,2000,3500,7000,14000]), Qb = pick([10,20,25,50,100]);
+    return {text:'共振周波数 '+m(f0+' kHz')+'、尖鋭度 Q = '+m(Qb)+' の直列共振回路がある。電流が最大値の 1/√2 になる周波数の幅(帯域幅)B は何 kHz か。', unit:'kHz', ans:f0/Qb, abs:0.5, rel:0.01,
+      steps:['帯域幅は、共振の山の幅。Q が大きいほど細くなる。', m('B = f₀ / Q = '+f0+' / '+Qb+' = '+fmt(f0/Qb)+' kHz')], tolText:'数値のみ(±1% まで正解)'};
+  };
+        /* ===== ここまで ===== */
+
+        const $ = (id) => document.getElementById(id);
+        // 級ごとの出題。いまは1級だけ。2〜4級は、分野と出題関数を同じ形で追加する。
+        const GRADES = {
+          1: {
+            label: "1級",
+            intro: "無線工学A問題の計算問題用。電卓なしで解ける数字だけを出題します。log₁₀2 = 0.3 を使用。",
+            cats: CATS,
+            order: ORDER,
+            gen: gen,
+            hasDbTable: true,
+          },
+          2: null,
+          3: null,
+          4: null,
+        };
+        const st = { grade: 1, active: {}, cur: null, answered: false, n: 0, ok: 0, input: null };
+
+        const G = () => GRADES[st.grade];
+        const key = (cat) => `k:${st.grade}:${cat}`;
+        const setAll = (on) => G().order.forEach((k) => (st.active[k] = on));
+
+        function renderGrades() {
+          const box = $("calc-grades");
+          box.replaceChildren();
+          [1, 2, 3, 4].forEach((g) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = `${g}級` + (GRADES[g] ? "" : "(準備中)");
+            b.disabled = !GRADES[g];
+            if (g === st.grade) b.classList.add("on");
+            b.addEventListener("click", () => {
+              st.grade = g;
+              st.n = 0;
+              st.ok = 0;
+              setAll(true);
+              renderAll();
+              newProblem();
+            });
+            box.appendChild(b);
+          });
+        }
+
+        function renderChips() {
+          const box = $("calc-chips");
+          box.replaceChildren();
+          const order = G().order;
+          const mk = (text, pressed, onclick) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = text;
+            b.setAttribute("aria-pressed", pressed ? "true" : "false");
+            if (pressed) b.classList.add("on");
+            b.addEventListener("click", onclick);
+            box.appendChild(b);
+          };
+          mk("すべて", order.every((k) => st.active[k]), () => {
+            setAll(true);
+            renderChips();
+            newProblem();
+          });
+          order.forEach((k) =>
+            mk(G().cats[k], st.active[k], () => {
+              const onlyThis = order.every((x) => st.active[x] === (x === k));
+              if (onlyThis) setAll(true);
+              else if (order.every((x) => st.active[x])) order.forEach((x) => (st.active[x] = x === k));
+              else {
+                st.active[k] = !st.active[k];
+                if (!order.some((x) => st.active[x])) st.active[k] = true;
+              }
+              renderChips();
+              newProblem();
+            })
+          );
+        }
+
+        // 成績: 今回の合計と、分野ごとの通算(学習記録から)
+        function renderStats() {
+          $("calc-tn").textContent = st.n;
+          $("calc-tok").textContent = st.ok;
+          $("calc-trate").textContent = st.n ? Math.round((st.ok / st.n) * 100) + "%" : "-";
+          const bars = $("calc-bars");
+          bars.replaceChildren();
+          G().order.forEach((k) => {
+            const s = morseStats.get(key(k));
+            const n = s ? s.n : 0;
+            const ok = s ? s.n - s.miss : 0;
+            const row = document.createElement("div");
+            row.className = "bar";
+            const name = document.createElement("span");
+            name.textContent = G().cats[k];
+            const track = document.createElement("span");
+            track.className = "track";
+            const fill = document.createElement("span");
+            fill.className = "fill";
+            fill.style.width = (n ? (ok / n) * 100 : 0) + "%";
+            track.appendChild(fill);
+            const v = document.createElement("span");
+            v.className = "v";
+            v.textContent = `${ok}/${n}`;
+            row.append(name, track, v);
+            bars.appendChild(row);
+          });
+        }
+
+        function renderAll() {
+          renderGrades();
+          $("calc-intro").textContent = G().intro;
+          $("calc-ref").hidden = !G().hasDbTable;
+          renderChips();
+          renderStats();
+        }
+
+        function ensureInput() {
+          if (st.input) return;
+          // ページ全体の input を一括操作する既存の処理に巻き込まれないよう、開いたときに作る
+          const el = document.createElement("input");
+          el.type = "text";
+          el.id = "calc-ans";
+          el.setAttribute("inputmode", "decimal");
+          el.setAttribute("enterkeyhint", "done");
+          el.autocomplete = "off";
+          $("calc-input-box").appendChild(el);
+          st.input = el;
+        }
+
+        function newProblem() {
+          ensureInput();
+          const keys = G().order.filter((k) => st.active[k]);
+          const k = keys[Math.floor(Math.random() * keys.length)];
+          st.cur = G().gen[k]();
+          st.cur.cat = k;
+          st.answered = false;
+          $("calc-cat").textContent = G().cats[k];
+          $("calc-q").innerHTML = st.cur.text;
+          $("calc-unit").textContent = st.cur.unit;
+          $("calc-tol").textContent = st.cur.tolText;
+          st.input.value = "";
+          st.input.disabled = false;
+          $("calc-out").replaceChildren();
+          $("calc-check").hidden = false;
+          $("calc-giveup").hidden = false;
+          $("calc-next").hidden = true;
+          st.input.focus({ preventScroll: true });
+        }
+
+        const parse = (s) => {
+          const t = String(s).normalize("NFKC").replace(/[\s,]/g, "").replace(/[−ー]/g, "-");
+          return /^-?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : null;
+        };
+
+        function finish(ok, userVal) {
+          const cur = st.cur;
+          st.answered = true;
+          st.n++;
+          if (ok) st.ok++;
+          morseStats.record(key(cur.cat), ok); // 学習記録(復習画面に載る)
+          const out = $("calc-out");
+          out.replaceChildren();
+          const r = document.createElement("div");
+          r.className = "result " + (ok ? "ok" : "ng");
+          r.innerHTML =
+            (ok ? "正解です。" : userVal === null ? "答えは " : "不正解です。正しい答えは ") +
+            '<span class="num">' + fmt(+cur.ans.toFixed(2)) + " " + cur.unit + "</span>" + (ok ? "" : " です。");
+          out.appendChild(r);
+          const sol = document.createElement("div");
+          sol.className = "sol";
+          sol.innerHTML = "<h3>解き方</h3><ol>" + cur.steps.map((x) => "<li>" + x + "</li>").join("") + "</ol>";
+          out.appendChild(sol);
+          $("calc-check").hidden = true;
+          $("calc-giveup").hidden = true;
+          $("calc-next").hidden = false;
+          st.input.disabled = true;
+          renderStats();
+          $("calc-next").focus({ preventScroll: true });
+        }
+
+        function check() {
+          if (st.answered) return;
+          const v = parse(st.input.value);
+          if (v === null) {
+            const out = $("calc-out");
+            out.replaceChildren();
+            const r = document.createElement("div");
+            r.className = "result ng";
+            r.textContent = "数字で入力してください。";
+            out.appendChild(r);
+            return;
+          }
+          const cur = st.cur;
+          const ok = Math.abs(v - cur.ans) <= Math.max(cur.abs || 0, (cur.rel || 0) * Math.abs(cur.ans)) + 1e-9;
+          finish(ok, v);
+        }
+
+        $("calc-form").addEventListener("submit", (e) => {
+          e.preventDefault();
+          check();
+        });
+        $("calc-check").addEventListener("click", check);
+        $("calc-giveup").addEventListener("click", () => !st.answered && finish(false, null));
+        $("calc-next").addEventListener("click", newProblem);
+        // 解答後は Enter で次の問題へ(この画面を開いているときだけ)
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && st.answered && !$("calc-view").hidden && document.activeElement !== $("calc-next")) {
+            e.preventDefault();
+            newProblem();
+          }
+        });
+
+        setAll(true);
+        window.calcInit = () => {
+          renderAll();
+          if (!st.cur) newProblem();
+          else if (!st.answered) st.input && st.input.focus({ preventScroll: true });
+        };
+        // 復習画面から: 苦手な分野だけを出題する
+        window.calcStartWeak = (keys) => {
+          const [g] = keys[0].split(":").slice(1);
+          st.grade = Number(g) || 1;
+          const cats = keys.filter((k) => k.split(":")[1] === String(st.grade)).map((k) => k.split(":")[2]);
+          G().order.forEach((k) => (st.active[k] = cats.includes(k)));
+          st.n = 0;
+          st.ok = 0;
+          renderAll();
+          newProblem();
+        };
+      })();
+    
+      calcInit();
+      {
+        const weak = new URLSearchParams(location.search).get("weak");
+        if (weak) calcStartWeak(weak.split(",").map((c) => "k:1:" + c));
+      }
+    </script>
+  </body>
+</html>
