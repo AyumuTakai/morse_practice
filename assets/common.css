@@ -98,3 +98,12 @@ header {
           
   }
 }
+
+/* ページ先頭の「対象の級」の注記 */
+.scope-note {
+  margin: 0;
+  padding: 0.35em 1em;
+  font-size: 0.8rem;
+  color: #3b4a5a;
+  background: #e3ebf3;
+}
