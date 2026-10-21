@@ -140,9 +140,9 @@ var KGEN = (function () {
   function genAnt() {
     var R = 73;
     var t = ri(0, 1);
-    if (t === 0) { var P = pick([12, 20, 50, 100, 150, 200]), I = Math.sqrt(P / R);
+    if (t === 0) { var I = pick([0.5, 1, 2, 3]), P = I * I * R; // P / 73 がちょうど I² になる値だけを出題する(手計算で √ を開けるように)
       return { text: '半波長ダイポールアンテナ(放射抵抗 ' + m('73 Ω') + ')の放射電力を ' + m(P + ' W') + ' にするために、アンテナに供給する電流は約何 A か。ただし、アンテナの損失は無視する。', unit: 'A', ans: I, abs: 0, rel: 0.05,
-        steps: [m('P = I² × R') + ' から ' + m('I = √(P / R)'), m('I = √(' + P + ' / 73) = √' + fmt(P / R) + ' ≈ ' + fmt(I) + ' A')], tolText: TOL5 }; }
+        steps: [m('P = I² × R') + ' から ' + m('I = √(P / R)'), m('I = √(' + fmt(P) + ' / 73) = √' + fmt(I * I) + ' = ' + fmt(I) + ' A')], tolText: TOL5 }; }
     var Ia = pick([0.5, 1, 1.5, 2]), Pa = Ia * Ia * R;
     return { text: '半波長ダイポールアンテナ(放射抵抗 ' + m('73 Ω') + ')に ' + m(Ia + ' A') + ' の電流を供給した。放射される電力は約何 W か。', unit: 'W', ans: Pa, abs: 0, rel: 0.05,
       steps: [m('P = I² × R'), m('P = ' + Ia + '² × 73 = ' + fmt(Ia * Ia) + ' × 73 ≈ ' + fmt(Pa) + ' W')], tolText: TOL5 };

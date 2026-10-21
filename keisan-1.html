@@ -322,7 +322,7 @@
     <script src="assets/gen-keisan.js"></script>
     <script>
 
-      // 計算: アマチュア無線技士の計算問題。出題ロジックは ama1-keisan.html から移植(内容は変更していない)。
+      // 計算: アマチュア無線技士の計算問題。出題ロジックは ama1-keisan.html から移植(直列共振だけ、手計算で解ける数字に変更)。
       (() => {
         /* ===== 出題ロジック(ama1-keisan.html から移植)===== */
   /* CATS(分野の名前)と ORDER(分野の並び)は data-keisan.js */
@@ -468,50 +468,50 @@
       tolText:'数値のみ(±1% まで正解)'};
   };
 
+  /* 直列共振: 手計算で解けるように、数字を選んでいる(2π ≈ 6.28、L×C = 25000 / f² を使う)。
+     ・XL = 6.28 × f × L が 25・50・100・200・500・1000 Ω ちょうど付近になる f×L だけを使う
+     ・C = 25000 / (f² × L) [f: MHz、L: μH、C: pF] が整数になる組だけを使う */
+  var XL_OF = {4:25, 8:50, 16:100, 32:200, 80:500, 160:1000};
+  function resXL(){
+    var fl = pick([4,8,16,32,80,160]), fs = [1,2,4,5,8,10,20].filter(function(f){ return fl % f === 0 && fl / f >= 1; }), f = pick(fs);
+    return {f:f, L:fl/f, XL:XL_OF[fl]};
+  }
+  function resC(){
+    var cand = [];
+    [1,2,4,5,10,20].forEach(function(f){ [1,2,4,5,10,20,25,50,100].forEach(function(L){
+      var C = 25000/(f*f*L);
+      if (Number.isInteger(C) && C >= 10 && C <= 1000) cand.push({f:f, L:L, C:C});
+    }); });
+    return pick(cand);
+  }
   gen.res = function(){
-    var t = ri(0,5), P2 = 2*Math.PI;
-    var f = pick([3.5,5,7,10,14]), L = pick([2,5,10,20]);
-    var XL = P2*f*L, tq = XL/pick([20,25,40,50]), NICE = [1,2,4,5,8,10,20,25,40,50,100], R = NICE.reduce(function(a,b){ return Math.abs(b-tq)<Math.abs(a-tq)?b:a; }), Q = XL/R;
-    var E = pick([0.1,0.2,0.5,1]);
-    var w = P2*f;                       /* ω を 10⁶ rad/s 単位で */
-    var Ct = 1e6/(w*XL);                /* 合成容量 [pF] */
-    function curStr(a){ return a<0.1 ? fmt(+(a*1000).toFixed(1))+' mA' : fmt(+a.toFixed(2))+' A'; }
-    var xlStep = m('XL = 2πfL ≈ 6.28 × '+f+' × '+L+' ≈ '+fmt(+XL.toFixed(1))+' Ω')+'(f[MHz] × L[μH] は 10⁶ と 10⁻⁶ が打ち消し合うので、数値をそのまま掛ける)';
-    var ctStep = [xlStep,
-      m('ω = 2πf ≈ 6.28 × '+f+' × 10⁶ ≈ '+fmt(+w.toFixed(1))+' × 10⁶ [rad/s]'),
-      m('Ct = 1 / (ω × XL) = 1 / ('+fmt(+w.toFixed(1))+' × '+fmt(+XL.toFixed(1))+' × 10⁶) ≈ '+fmt(+Ct.toFixed(1))+' pF')];
-    var head = '直列共振回路(L = '+m(L+' μH')+'、R = '+m(R+' Ω')+')が '+m(f+' MHz')+' で共振している。';
-    if (t===0){
-      return {text:head.replace('が','の共振周波数が').replace('で共振している。','である。')+'尖鋭度 Q はいくつか。', unit:'', ans:Q, abs:0.5, rel:0.05,
-        steps:[xlStep, m('Q = XL / R = '+fmt(+XL.toFixed(1))+' / '+R+' ≈ '+fmt(+Q.toFixed(1)))], tolText:'整数で入力(±5% まで正解)'};
-    }
-    if (t===1 || t===2){
-      var V = E*XL/R, coil = (t===1);
+    var t = ri(0, 5);
+    if (t <= 2){
+      var s = resXL(), f = s.f, L = s.L, XL = s.XL;
+      var Qs = [10,20,25,40,50,100].filter(function(q){ return Number.isInteger(XL/q) && XL/q >= 1; }), Q = pick(Qs), R = XL/Q, E = pick([0.1,0.2,0.5,1]);
+      var xlStep = m('XL = 2πfL ≈ 6.28 × '+f+' × '+L+' ≈ '+XL+' Ω')+'(f[MHz] × L[μH] は 10⁶ と 10⁻⁶ が打ち消し合うので、数値をそのまま掛ける。'+m('6.28 × '+(f*L)+' = '+fmt(+(6.28*f*L).toFixed(1)))+' を '+XL+' とみなす)';
+      var head = '直列共振回路(L = '+m(L+' μH')+'、R = '+m(R+' Ω')+')が '+m(f+' MHz')+' で共振している。';
+      if (t===0){
+        return {text:head.replace('が','の共振周波数が').replace('で共振している。','である。')+'尖鋭度 Q はいくつか。', unit:'', ans:Q, abs:0.5, rel:0.05,
+          steps:[xlStep, m('Q = XL / R = '+XL+' / '+R+' = '+Q)], tolText:'整数で入力(±5% まで正解)'};
+      }
+      var coil = (t===1), V = E*Q;
       return {text:head+'電源電圧が '+m(E+' V')+' のとき、'+(coil?'コイル':'コンデンサ')+'の両端電圧は何 V か。', unit:'V', ans:V, abs:0.05, rel:0.05,
-        steps:[xlStep, '共振では XL と XC が打ち消し合い、'+m('Z = R = '+R+' Ω'), m('I = E / R = '+E+' / '+R+' ≈ '+curStr(E/R)),
-          coil ? m('VL = I × XL ≈ '+curStr(E/R)+' × '+fmt(+XL.toFixed(1))+' Ω ≈ '+fmt(+V.toFixed(1))+' V') : '共振では '+m('XC = XL')+' なので、'+m('VC = I × XC ≈ '+curStr(E/R)+' × '+fmt(+XL.toFixed(1))+' Ω ≈ '+fmt(+V.toFixed(1))+' V'),
-          '近道: '+m('Q = XL / R ≈ '+fmt(+Q.toFixed(1)))+' を先に出して '+m('V = Q × E')+' でも同じ。'],
+        steps:[xlStep, '共振では XL と XC が打ち消し合い、'+m('Z = R = '+R+' Ω'), m('Q = XL / R = '+XL+' / '+R+' = '+Q),
+          coil ? m('VL = Q × E = '+Q+' × '+E+' = '+fmt(+V.toFixed(2))+' V') : '共振では '+m('XC = XL')+' なので、'+m('VC = Q × E = '+Q+' × '+E+' = '+fmt(+V.toFixed(2))+' V'),
+          '(別解: '+m('I = E / R')+' を出して '+m('V = I × XL')+' でも同じ)'],
         tolText:'小数で入力(±5% まで正解)'};
     }
-    var Lq = pick([2,5,10,20]), fq = pick([3.5,5,7,10,14]);
-    if (t===3){
-      var XLq = P2*fq*Lq, wq = P2*fq, Cq = 1e6/(wq*XLq);
-      return {text:'インダクタンス '+m(Lq+' μH')+' のコイルと直列のコンデンサで '+m(fq+' MHz')+' に共振させたい。必要な静電容量は何 pF か。', unit:'pF', ans:Cq, abs:1, rel:0.05,
-        steps:[m('XL = 2πfL ≈ 6.28 × '+fq+' × '+Lq+' ≈ '+fmt(+XLq.toFixed(1))+' Ω'), m('ω = 2πf ≈ '+fmt(+wq.toFixed(1))+' × 10⁶ [rad/s]'),
-          '共振条件 '+m('XL = XC = 1/(ωC)')+' から '+m('C = 1 / (ω × XL)'),
-          m('C = 1 / ('+fmt(+wq.toFixed(1))+' × '+fmt(+XLq.toFixed(1))+' × 10⁶) F'),
-          m('= (10⁶ / '+fmt(+(wq*XLq).toFixed(0))+') × 10⁻¹² F ≈ '+fmt(+Cq.toFixed(0))+' pF'),
-          '(1/(x × 10⁶) = (10⁶/x) × 10⁻¹² なので、10⁶ を x で割った数がそのまま pF になる)'],
-        tolText:'整数で入力(±5% まで正解)'};
-    }
-    var XLv = P2*fq*Lq, wv = P2*fq, Ctv = 1e6/(wv*XLv), Cf = Math.max(5, Math.round(Ctv*pick([0.2,0.3,0.4,0.5])/5)*5), Cv = Ctv - Cf;
-    if (t===4){
-      return {text:'固定コンデンサ C = '+m(Cf+' pF')+' と可変コンデンサ Cv を並列にし、コイル '+m(Lq+' μH')+' と直列にして '+m(fq+' MHz')+' に共振させる。Cv は何 pF か。', unit:'pF', ans:Cv, abs:2, rel:0.08,
-        steps:[m('XL = 2πfL ≈ 6.28 × '+fq+' × '+Lq+' ≈ '+fmt(+XLv.toFixed(1))+' Ω'), m('ω ≈ '+fmt(+wv.toFixed(1))+' × 10⁶ [rad/s]'),
-          m('合成容量 Ct = 1 / (ω × XL) ≈ '+fmt(+Ctv.toFixed(0))+' pF'),
-          '並列は容量が足し算: '+m('Ct = C + Cv'),
-          m('Cv = Ct − C ≈ '+fmt(+Ctv.toFixed(0))+' − '+Cf+' ≈ '+fmt(+Cv.toFixed(0))+' pF'),
-          '(概算で数 pF ずれても、近い値なら正解)'],
+    if (t===3 || t===4){
+      var c = resC(), Ct = c.C;
+      var base = [m('共振条件 XL = XC から '+'L × C = 1 / (2πf)²'), '単位を pF・μH・MHz にそろえると '+m('L × C ≈ 25000 / f²')+'(1/(2π)² = 0.0253 を使う。数値は 10⁶ 倍して pF にそろえた形)',
+        m('C ≈ 25000 / (f² × L) = 25000 / ('+(c.f*c.f)+' × '+c.L+') = '+Ct+' pF')];
+      if (t===3){
+        return {text:'インダクタンス '+m(c.L+' μH')+' のコイルと直列のコンデンサで '+m(c.f+' MHz')+' に共振させたい。必要な静電容量は何 pF か。', unit:'pF', ans:Ct, abs:1, rel:0.05, steps:base, tolText:'整数で入力(±5% まで正解)'};
+      }
+      var Cf = Math.max(5, Math.round(Ct*pick([0.2,0.3,0.4,0.5])/5)*5), Cv = Ct - Cf;
+      return {text:'固定コンデンサ C = '+m(Cf+' pF')+' と可変コンデンサ Cv を並列にし、コイル '+m(c.L+' μH')+' と直列にして '+m(c.f+' MHz')+' に共振させる。Cv は何 pF か。', unit:'pF', ans:Cv, abs:2, rel:0.08,
+        steps:base.slice(0,2).concat([m('合成容量 Ct ≈ 25000 / ('+(c.f*c.f)+' × '+c.L+') = '+Ct+' pF'), '並列は容量が足し算: '+m('Ct = C + Cv'), m('Cv = Ct − C = '+Ct+' − '+Cf+' = '+Cv+' pF'), '(概算で数 pF ずれても、近い値なら正解)']),
         tolText:'整数で入力(±8% または ±2 pF まで正解)'};
     }
     var f0 = pick([1000,2000,3500,7000,14000]), Qb = pick([10,20,25,50,100]);
