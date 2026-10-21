@@ -205,7 +205,7 @@ window.morseGradeBar = (container, onChange) => {
 
 // ページの切り替え(ヘッダーのドロップダウン)。ホーム・級・分野ごとのページを並べる
 (() => {
-  const GROUPS = [["級を選ぶ", [["kyu-4.html", "4級"], ["kyu-3.html", "3級"], ["kyu-2.html", "2級"], ["kyu-1.html", "1級"]]], ["モールス", [["tree.html", "モールスの木"], ["listen.html", "聞き取り"], ["check.html", "字句照合"]]], ["法規", [["qcode.html", "Q符号・略符号"], ["procedure.html", "運用手順"]]], ["計算", [["keisan-1.html", "1級 計算"]]], ["記録・設定", [["review.html", "復習"], ["settings.html", "設定"]]]];
+  const GROUPS = [["級を選ぶ", [["kyu-4.html", "4級"], ["kyu-3.html", "3級"], ["kyu-2.html", "2級"], ["kyu-1.html", "1級"]]], ["モールス", [["tree.html", "モールスの木"], ["listen.html", "聞き取り"], ["check.html", "字句照合"]]], ["法規", [["qcode.html", "Q符号・略符号"], ["procedure.html", "運用手順"]]], ["計算", [["keisan-4.html", "4級 計算"], ["keisan-3.html", "3級 計算"], ["keisan-2.html", "2級 計算"], ["keisan-1.html", "1級 計算"]]], ["記録・設定", [["review.html", "復習"], ["settings.html", "設定"]]]];
   const select = document.getElementById("page-select");
   if (!select) return;
   const here = document.body.dataset.page || location.pathname.split("/").pop() || "index.html";

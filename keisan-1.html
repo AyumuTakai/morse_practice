@@ -262,7 +262,7 @@
     </style>
     <link rel="stylesheet" href="tree.css" />
   </head>
-  <body data-page="keisan-1.html">
+  <body data-page="keisan-1.html" data-grade="1">
     <header>
       <h1>1級 計算</h1>
       <nav>
@@ -319,6 +319,7 @@
     </div>
     <script src="assets/common.js"></script>
     <script src="assets/data-keisan.js"></script>
+    <script src="assets/gen-keisan.js"></script>
     <script>
 
       // 計算: アマチュア無線技士の計算問題。出題ロジックは ama1-keisan.html から移植(内容は変更していない)。
@@ -530,17 +531,19 @@
             gen: gen,
             hasDbTable: true,
           },
-          2: null,
-          3: null,
-          4: null,
         };
-        const st = { grade: 1, active: {}, cur: null, answered: false, n: 0, ok: 0, input: null };
+        // 2〜4級の出題は assets/gen-keisan.js
+        [2, 3, 4].forEach((g) => (GRADES[g] = { ...KGEN[g], hasDbTable: false }));
+        const st = { grade: Number(document.body.dataset.grade) || 1, active: {}, cur: null, answered: false, n: 0, ok: 0, input: null };
 
         const G = () => GRADES[st.grade];
         const key = (cat) => `k:${st.grade}:${cat}`;
         const setAll = (on) => G().order.forEach((k) => (st.active[k] = on));
 
         function renderGrades() {
+          // 級はページごとに決まっているので、切り替えボタンは出さない
+          $("calc-grades").hidden = true;
+          return;
           const box = $("calc-grades");
           box.replaceChildren();
           [1, 2, 3, 4].forEach((g) => {
@@ -749,7 +752,7 @@
       calcInit();
       {
         const weak = new URLSearchParams(location.search).get("weak");
-        if (weak) calcStartWeak(weak.split(",").map((c) => "k:1:" + c));
+        if (weak) calcStartWeak(weak.split(",").map((c) => "k:" + document.body.dataset.grade + ":" + c));
       }
     </script>
   </body>

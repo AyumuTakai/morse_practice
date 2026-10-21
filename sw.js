@@ -1,7 +1,7 @@
 // オフラインでも使えるようにするための Service Worker。
 // 取得済みのファイルはキャッシュから即座に返し、通信できるときは裏で更新する
 // (更新は、次に開いたときに反映される)。
-const CACHE = "morse-practice-v4";
+const CACHE = "morse-practice-v5";
 const FILES = [
   "./",
   "tree.css",
@@ -12,6 +12,9 @@ const FILES = [
   "qcode.html",
   "procedure.html",
   "keisan-1.html",
+  "keisan-2.html",
+  "keisan-3.html",
+  "keisan-4.html",
   "review.html",
   "settings.html",
   "assets/common.css",
@@ -20,6 +23,7 @@ const FILES = [
   "assets/data-qcode.js",
   "assets/data-proc.js",
   "assets/data-keisan.js",
+  "assets/gen-keisan.js",
   "manifests/index.webmanifest",
   "manifests/tree.webmanifest",
   "manifests/listen.webmanifest",
@@ -27,6 +31,9 @@ const FILES = [
   "manifests/qcode.webmanifest",
   "manifests/procedure.webmanifest",
   "manifests/keisan-1.webmanifest",
+  "manifests/keisan-2.webmanifest",
+  "manifests/keisan-3.webmanifest",
+  "manifests/keisan-4.webmanifest",
   "manifests/review.webmanifest",
   "manifests/settings.webmanifest",
   "icons/index-180.png",
@@ -50,6 +57,15 @@ const FILES = [
   "icons/keisan-1-180.png",
   "icons/keisan-1-192.png",
   "icons/keisan-1-512.png",
+  "icons/keisan-2-180.png",
+  "icons/keisan-2-192.png",
+  "icons/keisan-2-512.png",
+  "icons/keisan-3-180.png",
+  "icons/keisan-3-192.png",
+  "icons/keisan-3-512.png",
+  "icons/keisan-4-180.png",
+  "icons/keisan-4-192.png",
+  "icons/keisan-4-512.png",
   "icons/review-180.png",
   "icons/review-192.png",
   "icons/review-512.png",
