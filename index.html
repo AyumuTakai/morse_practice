@@ -328,6 +328,46 @@
       #proc-view .fb .art {
         font-weight: bold;
       }
+      #proc-view .ex {
+        margin-top: 0.7em;
+        border: 1px solid #ccd;
+        border-radius: 0.5em;
+        background: #fafbfd;
+        padding: 0.5em 0.8em;
+      }
+      #proc-view .ex h4 {
+        margin: 0 0 0.3em;
+        font-size: 0.85rem;
+        color: #556;
+      }
+      #proc-view .ex .line {
+        font-family: monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      #proc-view .ex .who {
+        font-weight: bold;
+        color: lightslategray;
+      }
+      #proc-view .ex .note {
+        margin-top: 0.3em;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: #555;
+      }
+      #proc-view details {
+        margin-top: 1em;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 0.6em;
+        padding: 0.4em 0.9em;
+      }
+      #proc-view summary {
+        cursor: pointer;
+        font-weight: bold;
+      }
       #review-view {
         max-width: 720px;
         margin: 0 auto;
@@ -1059,6 +1099,10 @@
           <button id="proc-next" hidden>次へ</button>
         </div>
       </div>
+      <details id="proc-examples">
+        <summary>通信例の一覧(OSO と EXZ の違いなど)</summary>
+        <div id="proc-examples-body"></div>
+      </details>
       <p class="note">
         無線局運用規則(第20〜39条、第131〜135条)の手順の問題です。条文の番号は解答後に表示します。
         試験では、手順の中の符号・回数・時間が空欄になって出題されます。
@@ -1978,6 +2022,140 @@
           { id: "o-freq27", art: "第27条", kind: "order", q: "呼出し・応答の際に電波を変更する通知の手順を、順に並べてください(QSU を送信する場合)。", steps: ["呼出事項又は応答事項", "QSW又はQSU(1回)", "用いる電波の周波数(1回)", "?(QSUを送信したときに限る)(1回)"],
             exp: "周波数があらかじめ定められているときは、周波数の送信を省略できます。" },
         ];
+        // 通信例。局名は架空(JA1XXX が呼出局、JA2YYY が相手局)。条文にある要素だけで組み立てている。
+        const EXAMPLES = {
+          call: {
+            title: "呼出し(第20条)", order: 1,
+            lines: [["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX"]],
+            note: "相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(3回以下)。規則の「呼出事項」には K は含まれません。",
+          },
+          answer: {
+            title: "応答(第23条)", order: 2,
+            lines: [
+              ["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX"],
+              ["JA2YYY", "JA1XXX JA1XXX DE JA2YYY K        ← すぐ受信できる"],
+              ["JA2YYY", "JA1XXX JA1XXX DE JA2YYY AS 5      ← すぐには受信できない(約5分待ってほしい)"],
+            ],
+            note: "応答事項は、相手局の呼出符号(3回以下)、DE(1回)、自局の呼出符号(1回)。そのあとに K、または K の代わりに AS と待つべき時間(分)を送ります。待つ時間が10分以上のときは、理由も簡単に送ります。",
+          },
+          msg: {
+            title: "通報の送信(第29条)", order: 3,
+            lines: [["JA1XXX", "JA2YYY DE JA1XXX (通報) AR K"], ["JA1XXX", "(通報) AR K        ← 呼出しと同じ電波なら、最初の呼出符号・DE・呼出符号は省略できる"]],
+            note: "欧文の通報は AR で終わり、そのあとに K(1回)を送ります。",
+          },
+          receipt: {
+            title: "受信証(第37条)", order: 4,
+            lines: [["JA2YYY", "JA1XXX DE JA2YYY R 12"], ["JA2YYY", "R 12        ← 海上移動業務以外では、最初の3つ(呼出符号・DE・呼出符号)を省略できる"]],
+            note: "R のあとに、最後に受信した通報の番号を送ります。",
+          },
+          endmsg: {
+            title: "送信の終了と通信の終了(第36条・第38条)", order: 5,
+            lines: [["JA1XXX", "(通報) AR NIL K        ← 他に送る通報はない"], ["JA1XXX", "VA        ← 通信が終了した(海上移動業務以外では省略できる)"]],
+            note: "NIL と K は、この順に送ります。通信の終了は VA です。",
+          },
+          fix: {
+            title: "誤送の訂正(第31条)", order: 6,
+            lines: [["JA1XXX", "JA2YYY DE JA1XXA ········ DE JA1XXX        ← 欧文は8連点を前置して、正しく送った語(DE)から送り直す"]],
+            note: "手送の和文では8連点ではなく「ラタ」を前置します。",
+          },
+          repeat: {
+            title: "反復の要求(第32条)", order: 7,
+            lines: [["JA2YYY", "JA1XXX DE JA2YYY RPT 7030        ← 7030 の箇所をもう一度送ってほしい"]],
+            note: "RPT のあとに、反復してほしい箇所を示します。",
+          },
+          test: {
+            title: "試験電波の発射(第39条)", order: 8,
+            lines: [
+              ["JA1XXX", "EX EX EX DE JA1XXX JA1XXX JA1XXX"],
+              ["", "(更に1分間聴守して、他の無線局から停止の請求がないことを確かめる)"],
+              ["JA1XXX", "VVV VVV VVV VVV … JA1XXX        ← VVV の連続と自局の呼出符号(1回)"],
+            ],
+            note: "VVV の連続と呼出符号の送信は10秒間をこえてはなりません(海上移動業務以外では、必要があればこえられます)。",
+          },
+          freq27: {
+            title: "呼出し・応答での電波の変更(第27条・第28条)", order: 9,
+            lines: [
+              ["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX QSU 7030 ?        ← QSU を使ったので「?」が付く"],
+              ["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX QSW 7030        ← QSW のときは「?」を付けない"],
+              ["JA2YYY", "JA1XXX DE JA2YYY QSX K        ← 同意する"],
+            ],
+            note: "第27条は「QSW 又は QSU」。「?」は QSU を送信したときだけです。同意は QSX(第28条)。",
+          },
+          freq34: {
+            title: "通信中の周波数の変更(第34条・第35条)", order: 10,
+            lines: [
+              ["JA1XXX", "QSW 7030 ?        ← QSW を使ったので「?」が付く"],
+              ["JA1XXX", "QSY 7030        ← QSU や QSY のときは「?」を付けない"],
+              ["JA2YYY", "R        ← 応じる(そして直ちに周波数を変える)"],
+            ],
+            note: "第34条は「QSU 又は QSW 若しくは QSY」。「?」は QSW を送信したときだけで、第27条(QSU のとき)と逆です。",
+          },
+          qtc: {
+            title: "通報の有無の通知(第24条)", order: 11,
+            lines: [["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX QTC 2        ← 通報が2通ある"], ["JA2YYY", "JA1XXX JA1XXX DE JA2YYY QRU        ← こちらは送る通報がない"]],
+            note: "通報の有無は、QTC(あり。通数を続けられる)か QRU(なし)で知らせます。",
+          },
+          qsg: {
+            title: "通報の連続送信(第25条)", order: 12,
+            lines: [["JA1XXX", "QSG?        ← 続けて送ってよいか"], ["JA2YYY", "QSG 3        ← 同意する(3通続けて)"], ["JA2YYY", "QSG NO        ← 拒絶する"]],
+            note: "同意するときは QSG(必要なら通数)、拒絶するときは QSG NO です。",
+          },
+          qrz: {
+            title: "呼出局の呼出符号が不確実なとき(第26条)", order: 13,
+            lines: [["JA2YYY", "QRZ? DE JA2YYY K        ← 相手局の呼出符号の代わりに QRZ? を使って、すぐ応答する"]],
+            note: "自局への呼出しだと分かっているが、呼出局の呼出符号が聞き取れなかったときです。",
+          },
+          emg: {
+            title: "非常通信(OSO と EXZ の違い。第131〜135条)", order: 0,
+            lines: [
+              ["JA1XXX", "OSO OSO OSO JA2YYY JA2YYY DE JA1XXX JA1XXX        ← ① 連絡を設定する呼出し(OSO を3回前置)"],
+              ["JA2YYY", "OSO OSO OSO JA1XXX DE JA2YYY K        ← ② 応答(OSO を3回前置)"],
+              ["JA1XXX", "JA2YYY DE JA1XXX EXZ (通報) AR K        ← ③ 連絡がついたあと、通報の前に EXZ"],
+              ["JA2YYY", "JA1XXX DE JA2YYY R 12        ← ④ 受信証"],
+              ["JA1XXX", "OSO OSO OSO CQ CQ DE JA1XXX        ← 各局あての一括呼出しは、CQ の前に OSO 3回(第133条)"],
+            ],
+            note: "OSO は連絡を設定する呼出し・応答の前に3回(第131条)。EXZ は通報の前に置く符号で、和文では「ヒゼウ」(第135条)。覚え方: OSO は「呼出し」、EXZ は「通報(本文)」。OSO を前置した呼出しを受信した局は、応答する場合を除き、混信を与えるおそれのある電波の発射を停止して傍受します(第132条)。",
+          },
+        };
+        // 問題ごとに、解答後に見せる通信例(EXAMPLES のキー)
+        const EX_OF = {
+          "call-self": ["call"], "answer-self": ["answer"], "answer-k": ["answer"], "answer-as": ["answer"], "wait-reason": ["answer"],
+          "msg-ar": ["msg"], "fix-code": ["fix"], "fix-from": ["fix"], repeat: ["repeat"],
+          "qsw-34": ["freq34"], "accept-35": ["freq34"], "qsu-27": ["freq27"], "qsx-28": ["freq27"],
+          "end-msg": ["endmsg"], "receipt-r": ["receipt"], "end-comm": ["endmsg"],
+          "test-first": ["test"], "test-listen": ["test"], "test-vvv": ["test"],
+          "emg-oso": ["emg"], "emg-cq": ["emg"], "emg-exz": ["emg"],
+          "qtc-qru": ["qtc"], qsg: ["qsg"], "qrz-26": ["qrz"],
+          "o-call": ["call"], "o-answer": ["answer"], "o-msg": ["msg"], "o-receipt": ["receipt"], "o-end": ["endmsg"],
+          "o-test": ["test"], "o-freq34": ["freq34"], "o-freq27": ["freq27"],
+        };
+        // 通信例の1ブロック(局名つきで、1行ずつ表示する)
+        function exampleBlock(e) {
+          const box = document.createElement("div");
+          box.className = "ex";
+          const t = document.createElement("h4");
+          t.textContent = "通信例: " + e.title;
+          box.appendChild(t);
+          e.lines.forEach(([who, text]) => {
+            const row = document.createElement("div");
+            row.className = "line";
+            if (who) {
+              const w = document.createElement("span");
+              w.className = "who";
+              w.textContent = who + ": ";
+              row.appendChild(w);
+            }
+            row.appendChild(document.createTextNode(text));
+            box.appendChild(row);
+          });
+          if (e.note) {
+            const n = document.createElement("div");
+            n.className = "note";
+            n.textContent = e.note;
+            box.appendChild(n);
+          }
+          return box;
+        }
         const rnd = (n) => Math.floor(Math.random() * n);
         const shuffle = (arr) => {
           const a = [...arr];
@@ -2014,6 +2192,7 @@
             ans.textContent = "正しい順序: " + it.steps.map((s, i) => `${i + 1}. ${s}`).join(" → ");
             $("proc-fb").appendChild(ans);
           }
+          (EX_OF[it.id] || []).forEach((k) => $("proc-fb").appendChild(exampleBlock(EXAMPLES[k])));
           setButtons({ next: true });
           $("proc-meta").textContent = `今回 ${st.correct} / ${st.total} 問正解`;
         }
@@ -2119,6 +2298,10 @@
         };
         $("proc-scope-all").addEventListener("click", () => setScope("all"));
         $("proc-scope-weak").addEventListener("click", () => setScope("weak"));
+        // 通信例の一覧: 非常通信(OSO と EXZ)を先頭に、手順の順に並べる
+        Object.values(EXAMPLES)
+          .sort((a, b) => a.order - b.order)
+          .forEach((e) => $("proc-examples-body").appendChild(exampleBlock(e)));
         window.procInit = () => {
           if (!st.cur && !st.total) next();
         };
