@@ -170,9 +170,14 @@
       </nav>
     </header>
     <p class="scope-note">対象: 3級・2級・1級(無線電信の運用手順)。4級では出題されません</p>
+    <div id="grade-bar"></div>
+    <div id="grade-none" class="not-in-grade" hidden>
+      4級では、無線電信の運用手順は出題されません。3級・2級・1級を選ぶと、その級で出る手順を練習できます。
+    </div>
     <div id="proc-view">
       <div class="toolbar">
-        <button id="proc-scope-all" class="active">すべて</button>
+        <button id="proc-scope-grade" class="active">その級の過去問に出た条文</button>
+        <button id="proc-scope-all">すべて</button>
         <button id="proc-scope-weak">苦手</button>
       </div>
       <div class="card">
@@ -272,6 +277,11 @@
             ],
             note: "第34条は「QSU 又は QSW 若しくは QSY」。「?」は QSW を送信したときだけで、第27条(QSU のとき)と逆です。",
           },
+          qrl: {
+            title: "混信を受けたとき(第22条)", order: 14,
+            lines: [["JA1XXX", "JA3ZZZ DE JA1XXX QRL        ← 通信中なので、妨害しないよう通知する"]],
+            note: "既に行われている通信に混信を与える旨の通知を受けた局は、直ちに呼出しを中止します。通知する局は、分で表す概略の待つべき時間を示します。",
+          },
           qtc: {
             title: "通報の有無の通知(第24条)", order: 11,
             lines: [["JA1XXX", "JA2YYY JA2YYY DE JA1XXX JA1XXX QTC 2        ← 通報が2通ある"], ["JA2YYY", "JA1XXX JA1XXX DE JA2YYY QRU        ← こちらは送る通報がない"]],
@@ -305,7 +315,8 @@
           "msg-ar": ["msg"], "fix-code": ["fix"], "fix-from": ["fix"], repeat: ["repeat"],
           "qsw-34": ["freq34"], "accept-35": ["freq34"], "qsu-27": ["freq27"], "qsx-28": ["freq27"],
           "end-msg": ["endmsg"], "receipt-r": ["receipt"], "end-comm": ["endmsg"],
-          "test-first": ["test"], "test-listen": ["test"], "test-vvv": ["test"],
+          "test-first": ["test"], "test-listen": ["test"], "test-vvv": ["test"], "test-self": ["test"], "test-watch": ["test"],
+          "qrl-22": ["qrl"],
           "emg-oso": ["emg"], "emg-cq": ["emg"], "emg-exz": ["emg"],
           "qtc-qru": ["qtc"], qsg: ["qsg"], "qrz-26": ["qrz"],
           "o-call": ["call"], "o-answer": ["answer"], "o-msg": ["msg"], "o-receipt": ["receipt"], "o-end": ["endmsg"],
@@ -347,10 +358,15 @@
           }
           return a;
         };
-        const st = { scope: "all", cur: null, last: null, placed: [], done: false, total: 0, correct: 0 };
+        const st = { scope: "grade", cur: null, last: null, placed: [], done: false, total: 0, correct: 0 };
+        // 級: 選択バーで切り替える。出題が確認できた条文は gr に級が入っている(data-proc.js)
+        const grade = () => morseGrade.get() || 1;
         const weakItems = () =>
           morseStats.weakKeys("p:").map((k) => PROCS.find((x) => "p:" + x.id === k)).filter(Boolean);
-        const pool = () => (st.scope === "weak" ? weakItems() : PROCS);
+        const pool = () =>
+          st.scope === "weak" ? weakItems() : st.scope === "grade" ? PROCS.filter((p) => p.gr.includes(grade())) : PROCS;
+        // 3級の問題の表記に合わせた言い換え(v3)があれば使う(例: 訂正符号は「HH」)
+        const forGrade = (p) => (grade() === 3 && p.v3 ? { ...p, ...p.v3 } : p);
 
         function setButtons({ undo = false, submit = false, next = false }) {
           $("proc-undo").hidden = !undo;
@@ -453,7 +469,7 @@
             return;
           }
           const cand = p.length > 1 ? p.filter((x) => x.id !== st.last) : p;
-          const it = cand[rnd(cand.length)];
+          const it = forGrade(cand[rnd(cand.length)]);
           st.cur = it;
           st.last = it.id;
           st.placed = [];
@@ -472,20 +488,34 @@
         $("proc-next").addEventListener("click", next);
         const setScope = (s) => {
           st.scope = s;
+          $("proc-scope-grade").classList.toggle("active", s === "grade");
           $("proc-scope-all").classList.toggle("active", s === "all");
           $("proc-scope-weak").classList.toggle("active", s === "weak");
           st.total = 0;
           st.correct = 0;
           next();
         };
+        $("proc-scope-grade").addEventListener("click", () => setScope("grade"));
         $("proc-scope-all").addEventListener("click", () => setScope("all"));
         $("proc-scope-weak").addEventListener("click", () => setScope("weak"));
         // 通信例の一覧: 非常通信(OSO と EXZ)を先頭に、手順の順に並べる
         Object.values(EXAMPLES)
           .sort((a, b) => a.order - b.order)
           .forEach((e) => $("proc-examples-body").appendChild(exampleBlock(e)));
+        // 級が変わったら出題し直す。4級では出題されないので案内を出す
+        const applyGrade = () => {
+          const none = grade() === 4;
+          $("grade-none").hidden = !none;
+          $("proc-view").hidden = none;
+          if (none) return;
+          st.total = 0;
+          st.correct = 0;
+          next();
+        };
         window.procInit = () => {
-          if (!st.cur && !st.total) next();
+          morseGradeBar($("grade-bar"), applyGrade);
+          if (grade() === 4) applyGrade();
+          else if (!st.cur && !st.total) next();
         };
         window.procStartWeak = () => setScope("weak");
       })();

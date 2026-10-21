@@ -168,6 +168,41 @@ window.morseStats = (() => {
   };
 })();
     
+// 級の選択。get() は 0(未選択)〜4。set() は保存して「← N級」を更新する
+window.morseGrade = {
+  get() {
+    const g = Number(morseSettings.load().grade);
+    return g >= 1 && g <= 4 ? g : 0;
+  },
+  set(g) {
+    morseSettings.save({ grade: g });
+    if (window.morseUpdateBack) window.morseUpdateBack();
+  },
+};
+// 練習ページの級の選択バー。onChange(級) で、ページが表示を作り直す
+window.morseGradeBar = (container, onChange) => {
+  container.className = "grade-bar";
+  container.replaceChildren();
+  const label = document.createElement("span");
+  label.textContent = "級:";
+  container.appendChild(label);
+  const buttons = [];
+  [4, 3, 2, 1].forEach((g) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = `${g}級`;
+    b.addEventListener("click", () => {
+      window.morseGrade.set(g);
+      show();
+      onChange(g);
+    });
+    container.appendChild(b);
+    buttons.push([g, b]);
+  });
+  const show = () => buttons.forEach(([g, b]) => b.classList.toggle("on", g === (window.morseGrade.get() || 1)));
+  show();
+};
+
 // ページの切り替え(ヘッダーのドロップダウン)。ホーム・級・分野ごとのページを並べる
 (() => {
   const GROUPS = [["級を選ぶ", [["kyu-4.html", "4級"], ["kyu-3.html", "3級"], ["kyu-2.html", "2級"], ["kyu-1.html", "1級"]]], ["モールス", [["tree.html", "モールスの木"], ["listen.html", "聞き取り"], ["check.html", "字句照合"]]], ["法規", [["qcode.html", "Q符号・略符号"], ["procedure.html", "運用手順"]]], ["計算", [["keisan-1.html", "1級 計算"]]], ["記録・設定", [["review.html", "復習"], ["settings.html", "設定"]]]];
@@ -191,15 +226,21 @@ window.morseStats = (() => {
   });
   select.value = here;
   select.addEventListener("change", () => (location.href = select.value));
-  // 練習ページでは、直前に選んだ級のメニューへ戻るリンクを出す
-  const grade = Number(morseSettings.load().grade);
-  if (grade >= 1 && grade <= 4 && !/^(index|kyu-\d)\.html$/.test(here)) {
-    const back = document.createElement("a");
-    back.className = "back";
-    back.href = `kyu-${grade}.html`;
-    back.textContent = `← ${grade}級`;
-    select.parentNode.insertBefore(back, select);
-  }
+  // 練習ページでは、選んだ級のメニューへ戻るリンクを出す(級を切り替えると更新される)
+  const isMenu = /^(index|kyu-\d)\.html$/.test(here);
+  window.morseUpdateBack = () => {
+    let back = document.querySelector("header .back");
+    const g = window.morseGrade.get();
+    if (!g || isMenu) return;
+    if (!back) {
+      back = document.createElement("a");
+      back.className = "back";
+      select.parentNode.insertBefore(back, select);
+    }
+    back.href = `kyu-${g}.html`;
+    back.textContent = `← ${g}級`;
+  };
+  window.morseUpdateBack();
 })();
 
 // オフライン対応: Service Worker を登録する(http/https で開いたときだけ)

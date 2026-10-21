@@ -19,7 +19,7 @@
           { c: "BT", g: "略符号", m: "同一の伝送の異なる部分を分離する符号", x: [R.b + " A-15"], mo: "－・・・－" },
           { c: "RPT", g: "略符号", m: "反復してください(又はこちらは、反復します。)(通報の反復を求めるとき、次に反復箇所を示す)", x: [R.b + " A-14", R.d + " A-16"] },
           { c: "NIL", g: "略符号", m: "こちらは、そちらに送信するものがありません。(通報の送信終了時、続けて K)", x: [R.c + " A-13"] },
-          { c: "訂正符号", g: "略符号", m: "欧文通信及び自動機通信の訂正符号(誤送時。8連点=EEEEEEEE を1符号として送信)", x: [R.c + " A-16"], mo: "・・・・・・・・" },
+          { c: "訂正符号", g: "略符号", m: "欧文通信及び自動機通信の訂正符号(誤送時。8連点=EEEEEEEE を1符号として送信。3級の問題では「HH」と表記される)", x: [R.c + " A-16"], mo: "・・・・・・・・" },
           { c: "EXZ", g: "略符号", m: "欧文の非常通報の前置符号(和文は「ヒゼウ」)", x: [R.a + " A-14"] },
           { c: "OSO", g: "略符号", m: "非常符号(連絡設定の呼出し・応答に3回前置)", x: [R.d + " A-14"], mo: "－－－・・・－－－" },
           { c: "AR", g: "略符号", m: "送信の終了符号", x: [R.a + " A-13(誤り選択肢)"], mo: "・－・－・" },
@@ -84,6 +84,17 @@
         // 試験の表記に合わせ、文字ごとに空白で区切る(例: ・－－・ ・－・ ・)
         const toMorse = (code) => [...code].map((ch) => dotDash(MORSE[ch])).join(" ");
         QCODES.forEach((item) => (item.morse = item.mo || toMorse(item.c)));
+  // 出題が確認できた級(gr)。1級は過去問(令和6年12月期〜令和8年8月期。x のあるもの)、
+  // 2級は過去問(令和6年8月期〜令和8年8月期)、3級は公式のCBT例題(3組)で確認した。
+  // 確認できていない符号は gr が空(その級で出たとは言えない。「すべて」では出題する)
+  const GR2 = ["QRA", "QRH", "QRN", "QRU", "QRL", "QRK5", "QRZ", "K", "AS", "AR", "BT", "NIL", "VA", "RPT", "R", "EXZ", "OSO", "訂正符号"];
+  const GR3 = ["QRZ", "DE", "R", "訂正符号", "EX", "VVV"];
+  QCODES.forEach((item) => {
+    item.gr = [];
+    if (item.x) item.gr.push(1);
+    if (GR2.includes(item.c)) item.gr.push(2);
+    if (GR3.includes(item.c)) item.gr.push(3);
+  });
   window.QCODES = QCODES;
   window.qcodeToMorse = toMorse;
 })();

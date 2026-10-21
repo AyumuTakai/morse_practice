@@ -216,6 +216,10 @@
       </nav>
     </header>
     <p class="scope-note">対象: 2級・1級(3級は手順の中の一部の略符号のみ)。4級では出題されません</p>
+    <div id="grade-bar"></div>
+    <div id="grade-none" class="not-in-grade" hidden>
+      4級では、Q符号・略符号は出題されません。3級・2級・1級を選ぶと、その級で出る符号を練習できます。
+    </div>
     <div id="qcode-view">
       <div class="toolbar">
         <button id="qtab-list" class="active">一覧</button>
@@ -228,6 +232,7 @@
           <button id="hide-code">符号を隠す</button>
           <button id="hide-morse">モールスを隠す</button>
           <button id="show-all">すべて表示</button>
+          <button id="list-scope">表示: この級で出たもの</button>
         </div>
         <p class="note">隠したセルはクリックで表示できます。</p>
         <table>
@@ -251,7 +256,7 @@
           <button id="mode-meaning">意味 → 符号</button>
           <button id="mode-morse">意味 → モールス(試験形式)</button>
           <button id="mode-sound">音 → 符号</button>
-          <button id="scope">範囲: 過去問に出たもの</button>
+          <button id="scope">範囲: その級の過去問に出たもの</button>
           <button id="restart">最初から</button>
           <button id="retry-missed">間違えた問題だけ</button>
         </div>
@@ -277,15 +282,31 @@
         const QCODES = window.QCODES; // data-qcode.js
         const toMorse = window.qcodeToMorse;
 
+        // 級: 選択バーで切り替える。出題が確認できた符号は gr に級が入っている(data-qcode.js)
+        const grade = () => morseGrade.get() || 1;
+        const inGrade = (item) => item.gr.includes(grade());
+        const evidence = (item) => {
+          const g = grade();
+          if (!inGrade(item)) return "別表第2号";
+          if (g === 1) return "★ " + item.x.join(", ");
+          return g === 2 ? "★ 2級の過去問で出題" : "★ 3級の例題で出題";
+        };
+        let listOnlyGrade = true;
+
         // ---- 一覧 ----
         const listBody = $("list-body");
-        QCODES.forEach((item) => {
+        function renderList() {
+          listBody.replaceChildren();
+          QCODES.filter((item) => !listOnlyGrade || inGrade(item)).forEach(addRow);
+          $("list-scope").textContent = "表示: " + (listOnlyGrade ? "この級で出たもの" : "すべて");
+        }
+        function addRow(item) {
           const tr = document.createElement("tr");
           [
             ["code", item.c],
             ["morse", item.morse],
             ["meaning", item.m],
-            ["exam", item.x ? "★ " + item.x.join(", ") : "別表第2号"],
+            ["exam", evidence(item)],
           ].forEach(([kind, text]) => {
             const td = document.createElement("td");
             td.textContent = text;
@@ -300,6 +321,10 @@
           play.appendChild(btn);
           tr.appendChild(play);
           listBody.appendChild(tr);
+        }
+        $("list-scope").addEventListener("click", () => {
+          listOnlyGrade = !listOnlyGrade;
+          renderList();
         });
         listBody.addEventListener("click", (e) => {
           if (e.target.tagName === "TD") e.target.classList.remove("hidden-cell");
@@ -335,7 +360,7 @@
         };
 
         const SCOPES = {
-          exam: "範囲: 過去問に出たもの",
+          exam: "範囲: その級の過去問に出たもの",
           all: "範囲: すべて",
           weak: "範囲: 苦手(学習記録から)",
         };
@@ -343,7 +368,7 @@
         const weakItems = () =>
           morseStats.weakKeys("q:").map((k) => QCODES.find((x) => "q:" + x.c === k)).filter(Boolean);
         const pool = () =>
-          quiz.scope === "exam" ? QCODES.filter((x) => x.x) : quiz.scope === "weak" ? weakItems() : QCODES;
+          quiz.scope === "exam" ? QCODES.filter(inGrade) : quiz.scope === "weak" ? weakItems() : QCODES;
 
         function startQuiz(items = pool()) {
           if (!items.length) {
@@ -423,7 +448,7 @@
             });
           }
           $("detail").textContent =
-            `${item.c} ${item.morse} … ${item.m}` + (item.x ? `  ★${item.x.join(", ")}` : "");
+            `${item.c} ${item.morse} … ${item.m}` + (inGrade(item) ? `  ${evidence(item)}` : "");
           $("score").textContent = `${quiz.index + 1} / ${quiz.queue.length}  正解 ${quiz.correct}`;
           $("next").hidden = false;
         }
@@ -480,7 +505,22 @@
         };
         $("qtab-list").addEventListener("click", () => showQ("list"));
         $("qtab-quiz").addEventListener("click", () => showQ("quiz"));
-        window.qcodeInit = () => { if (!quiz.queue.length) startQuiz(); };
+        // 級が変わったら、一覧とクイズを作り直す。4級では出題されないので案内を出す
+        const applyGrade = () => {
+          const none = grade() === 4;
+          $("grade-none").hidden = !none;
+          $("qcode-view").hidden = none;
+          if (none) return;
+          renderList();
+          quiz.queue = [];
+          startQuiz();
+        };
+        window.qcodeInit = () => {
+          morseGradeBar($("grade-bar"), applyGrade);
+          renderList();
+          if (grade() === 4) applyGrade();
+          else if (!quiz.queue.length) startQuiz();
+        };
         // 復習画面から: 苦手な符号をクイズで出題する
         window.qcodeStartWeak = () => {
           setScope("weak");

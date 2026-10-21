@@ -120,3 +120,36 @@ header nav .back {
   text-decoration: none;
   white-space: nowrap;
 }
+
+/* 練習ページの級の選択バー */
+.grade-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.4em 1em;
+  background: #f4f7fb;
+  border-bottom: 1px solid #d5dde6;
+  font-size: 0.9rem;
+}
+.grade-bar button {
+  height: auto;
+  font-size: 0.9rem;
+  padding: 0.2em 0.9em;
+  margin: 0;
+  border: 1px solid lightslategray;
+  border-radius: 1em;
+  background: white;
+  cursor: pointer;
+}
+.grade-bar button.on {
+  background: lightslategray;
+  color: white;
+}
+.not-in-grade {
+  margin: 1em;
+  padding: 1em;
+  background: #fff4e0;
+  border: 1px solid #e6c88a;
+  border-radius: 0.6em;
+  line-height: 1.6;
+}

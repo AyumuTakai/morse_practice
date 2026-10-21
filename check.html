@@ -124,6 +124,13 @@
               color: #555;
       
       }
+      #choice-view button { height:auto; font-size:1.05rem; padding:0.6em 1em; border-radius:0.8em; border:1px solid lightslategray; background:transparent; cursor:pointer; letter-spacing:0.08em; }
+      #choice-view button.picked { background:#d8f0e4; border-color:#1a8f5a; color:#000; }
+      #choice-view button.bad { background:#ffe0d6; border-color:#c0392b; color:#000; }
+      #choice-view .word { font-family:monospace; font-size:1.5rem; letter-spacing:0.15em; }
+      #choice-view .card { background:white; border:1px solid #ccc; border-radius:1em; padding:0.4em 1em; }
+      #choice-view .score { font-size:1.1rem; margin:0.5em 0; }
+      #choice-view .note { font-size:0.85rem; color:#555; }
       @media (max-width: 600px) {
         #check-view {
                   padding: 0.5em;
@@ -140,15 +147,29 @@
         <select id="page-select" aria-label="ページの切り替え"></select>
       </nav>
     </header>
-    <p class="scope-note">対象: 2級・1級(3級は「字句をモールス符号で表したものを選ぶ」選択式)。4級では出題されません</p>
+    <p class="scope-note">対象: 1級=英字10字/英字5字+数字の○×、2級=英字9字の○×、3級=字句をモールス符号で表したものを選ぶ4択。4級では出題されません</p>
+    <div id="grade-bar"></div>
+    <div id="grade-none" class="not-in-grade" hidden>
+      4級では、字句とモールス符号の照合は出題されません。3級・2級・1級を選ぶと練習できます。
+    </div>
+    <div id="choice-view" hidden style="max-width:720px;margin:0 auto;padding:1em">
+      <p class="note">字句を、モールス符号で表したものを選びます(3級の形式)。</p>
+      <div class="card"><div class="q">
+        <div class="word" id="choice-word"></div>
+        <div class="choices" id="choice-opts" style="display:grid;gap:0.4em;margin-top:0.6em"></div>
+        <div class="fb" id="choice-fb"></div>
+      </div></div>
+      <div class="score" id="choice-score"></div>
+      <button id="choice-next" hidden>次の問題</button>
+    </div>
     <div id="check-view">
-      <div class="toolbar">
+      <div class="toolbar" id="check-kinds">
         <button id="check-kind-10" class="active">英字10文字</button>
         <button id="check-kind-6">英字5文字+数字</button>
       </div>
       <p class="note">
         字句とモールス符号の組合せが、無線局運用規則 別表第1号に適合するか(1)、しないか(2)を答えます。
-        5問のうち誤りはちょうど2問です。
+        5問のうち誤りはちょうど2問です。1級は英字10字または英字5字+数字、2級は英字9字です。
       </p>
       <div class="card" id="check-list"></div>
       <div class="score" id="check-score"></div>
@@ -173,7 +194,8 @@
         const fmt = (code) => code.replace(/\./g, "・").replace(/-/g, "－");
         const rnd = (n) => Math.floor(Math.random() * n);
         const pick = (a) => a[rnd(a.length)];
-        const KIND = { 10: { letters: 10, digit: false }, 6: { letters: 5, digit: true } };
+        const KIND = { 10: { letters: 10, digit: false }, 9: { letters: 9, digit: false }, 6: { letters: 5, digit: true } };
+        const grade = () => morseGrade.get() || 1;
         const NAMES = ["ア", "イ", "ウ", "エ", "オ"];
         // 符号の編集距離(1つ違いほど紛らわしい)
         const lev = (a, b) => {
@@ -184,7 +206,7 @@
               d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
           return d[a.length][b.length];
         };
-        const st = { kind: 10, items: [], submitted: false };
+        const st = { kind: 10, items: [], submitted: false, ch: null, chTotal: 0, chOk: 0 };
 
         function makeItem(kind, wrong) {
           const k = KIND[kind];
@@ -323,6 +345,84 @@
           $("check-score").scrollIntoView({ block: "nearest" });
         }
 
+        // 3級: 字句をモールス符号で表したものを4択で選ぶ
+        const ALL = Object.keys(CODE);
+        function newChoice() {
+          const n = 6 + rnd(3);
+          const chars = Array.from({ length: n }, () => pick(ALL));
+          const key = (cs) => cs.map((c) => CODE[c]).join(" ");
+          const opts = [{ cs: chars, ok: true, changed: [] }];
+          let guard = 0;
+          while (opts.length < 4 && guard++ < 200) {
+            const cs = [...chars];
+            const changed = [];
+            const cnt = 1 + rnd(2);
+            for (let k = 0; k < cnt; k++) {
+              const i = rnd(n);
+              const pool = ALL.filter((c) => (/[0-9]/.test(c) === /[0-9]/.test(chars[i])) && c !== chars[i]);
+              const near = pool.filter((c) => lev(CODE[c], CODE[chars[i]]) <= 1);
+              cs[i] = pick(near.length ? near : pool);
+              changed.push(i);
+            }
+            if (opts.some((o) => key(o.cs) === key(cs)) || key(cs) === key(chars)) continue;
+            opts.push({ cs, ok: false, changed });
+          }
+          for (let i = opts.length - 1; i > 0; i--) {
+            const j = rnd(i + 1);
+            [opts[i], opts[j]] = [opts[j], opts[i]];
+          }
+          st.ch = { chars, opts, done: false };
+          $("choice-word").textContent = chars.join("");
+          $("choice-fb").textContent = "";
+          $("choice-next").hidden = true;
+          const box = $("choice-opts");
+          box.replaceChildren();
+          opts.forEach((o, i) => {
+            const b = document.createElement("button");
+            b.style.textAlign = "left";
+            b.textContent = `${i + 1}  ${o.cs.map((c) => fmt(CODE[c])).join(" ")}`;
+            b.addEventListener("click", () => {
+              if (st.ch.done) return;
+              st.ch.done = true;
+              const ok = o.ok;
+              st.chTotal++;
+              if (ok) st.chOk++;
+              // 取り違えやすかった文字を記録する(選んだ選択肢が誤りなら、その違いの文字が苦手)
+              if (!ok) o.changed.forEach((idx) => morseStats.record("c:" + chars[idx], false));
+              box.querySelectorAll("button").forEach((x, xi) => {
+                x.disabled = true;
+                if (opts[xi].ok) x.classList.add("picked");
+              });
+              if (!ok) b.classList.add("bad");
+              $("choice-fb").textContent = ok ? "○ 正解" : "× 不正解(正解は " + (opts.findIndex((x) => x.ok) + 1) + ")";
+              $("choice-score").textContent = `${st.chOk} / ${st.chTotal} 問正解`;
+              $("choice-next").hidden = false;
+            });
+            box.appendChild(b);
+          });
+        }
+        $("choice-next").addEventListener("click", newChoice);
+
+        // 級に合わせて形式を切り替える
+        function applyGrade() {
+          const g = grade();
+          $("grade-none").hidden = g !== 4;
+          $("check-view").hidden = g === 4 || g === 3;
+          $("choice-view").hidden = g !== 3;
+          if (g === 3) {
+            if (!st.ch) newChoice();
+          } else if (g === 2) {
+            $("check-kinds").hidden = true;
+            st.kind = 9;
+            newSet();
+          } else if (g === 1) {
+            $("check-kinds").hidden = false;
+            if (st.kind === 9) st.kind = 10;
+            [10, 6].forEach((x) => $("check-kind-" + x).classList.toggle("active", x === st.kind));
+            newSet();
+          }
+        }
+
         $("check-submit").addEventListener("click", submit);
         $("check-next").addEventListener("click", newSet);
         [10, 6].forEach((k) =>
@@ -333,7 +433,8 @@
           })
         );
         window.checkInit = () => {
-          if (!st.items.length) newSet();
+          morseGradeBar($("grade-bar"), applyGrade);
+          applyGrade();
         };
       })();
     
