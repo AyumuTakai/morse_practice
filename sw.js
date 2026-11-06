@@ -1,22 +1,111 @@
 // オフラインでも使えるようにするための Service Worker。
 // 取得済みのファイルはキャッシュから即座に返し、通信できるときは裏で更新する
 // (更新は、次に開いたときに反映される)。
-const CACHE = "morse-practice-v1";
+const CACHE = "morse-practice-v15";
 const FILES = [
   "./",
-  "index.html",
   "tree.css",
-  "manifest.webmanifest",
-  "icon-192.png",
-  "icon-512.png",
-  "apple-touch-icon.png",
+  "index.html",
+  "tree.html",
+  "listen.html",
+  "check.html",
+  "qcode.html",
+  "procedure.html",
+  "keisan-1.html",
+  "keisan-2.html",
+  "keisan-3.html",
+  "keisan-4.html",
+  "waterfall.html",
+  "review.html",
+  "settings.html",
+  "assets/common.css",
+  "assets/common.js",
+  "assets/tree-lib.js",
+  "assets/data-qcode.js",
+  "assets/data-proc.js",
+  "assets/data-keisan.js",
+  "assets/gen-keisan.js",
+  "assets/calc-pad.js",
+  "manifests/index.webmanifest",
+  "manifests/tree.webmanifest",
+  "manifests/listen.webmanifest",
+  "manifests/check.webmanifest",
+  "manifests/qcode.webmanifest",
+  "manifests/procedure.webmanifest",
+  "manifests/keisan-1.webmanifest",
+  "manifests/keisan-2.webmanifest",
+  "manifests/keisan-3.webmanifest",
+  "manifests/keisan-4.webmanifest",
+  "manifests/waterfall.webmanifest",
+  "manifests/review.webmanifest",
+  "manifests/settings.webmanifest",
+  "icons/index-180.png",
+  "icons/index-192.png",
+  "icons/index-512.png",
+  "icons/tree-180.png",
+  "icons/tree-192.png",
+  "icons/tree-512.png",
+  "icons/listen-180.png",
+  "icons/listen-192.png",
+  "icons/listen-512.png",
+  "icons/check-180.png",
+  "icons/check-192.png",
+  "icons/check-512.png",
+  "icons/qcode-180.png",
+  "icons/qcode-192.png",
+  "icons/qcode-512.png",
+  "icons/procedure-180.png",
+  "icons/procedure-192.png",
+  "icons/procedure-512.png",
+  "icons/keisan-1-180.png",
+  "icons/keisan-1-192.png",
+  "icons/keisan-1-512.png",
+  "icons/keisan-2-180.png",
+  "icons/keisan-2-192.png",
+  "icons/keisan-2-512.png",
+  "icons/keisan-3-180.png",
+  "icons/keisan-3-192.png",
+  "icons/keisan-3-512.png",
+  "icons/keisan-4-180.png",
+  "icons/keisan-4-192.png",
+  "icons/keisan-4-512.png",
+  "icons/waterfall-180.png",
+  "icons/waterfall-192.png",
+  "icons/waterfall-512.png",
+  "icons/review-180.png",
+  "icons/review-192.png",
+  "icons/review-512.png",
+  "icons/settings-180.png",
+  "icons/settings-192.png",
+  "icons/settings-512.png",
+  "assets/portal.css",
+  "kyu-4.html",
+  "kyu-3.html",
+  "kyu-2.html",
+  "kyu-1.html",
+  "manifests/kyu-4.webmanifest",
+  "manifests/kyu-3.webmanifest",
+  "manifests/kyu-2.webmanifest",
+  "manifests/kyu-1.webmanifest",
+  "icons/kyu-4-180.png",
+  "icons/kyu-4-192.png",
+  "icons/kyu-4-512.png",
+  "icons/kyu-3-180.png",
+  "icons/kyu-3-192.png",
+  "icons/kyu-3-512.png",
+  "icons/kyu-2-180.png",
+  "icons/kyu-2-192.png",
+  "icons/kyu-2-512.png",
+  "icons/kyu-1-180.png",
+  "icons/kyu-1-192.png",
+  "icons/kyu-1-512.png"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(FILES))
+      .then((cache) => cache.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -48,4 +137,9 @@ self.addEventListener("fetch", (event) => {
       return cached || network;
     })
   );
+});
+
+// 設定ページから、いま動いている版を聞かれたときに答える
+self.addEventListener("message", (event) => {
+  if (event.data === "version" && event.ports[0]) event.ports[0].postMessage(CACHE);
 });

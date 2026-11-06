@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>復習 - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="復習" />
+    <link rel="manifest" href="manifests/review.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/review-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      #review-view {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 1em;
+      
+      }
+      #review-view h2 {
+              font-size: 1.05rem;
+              margin: 1.2em 0 0.4em;
+      
+      }
+      #review-view button {
+              height: auto;
+              font-size: 1rem;
+              padding: 0.6em 1em;
+              margin: 0.5em 0.3em 0.5em 0;
+              border-radius: 2em;
+              border: 1px solid lightslategray;
+              background-color: transparent;
+              cursor: pointer;
+      
+      }
+      #review-view .card {
+              background: white;
+              border: 1px solid #ccc;
+              border-radius: 1em;
+              padding: 0.8em 1em;
+      
+      }
+      #review-view .note {
+              font-size: 0.85rem;
+              color: #555;
+      
+      }
+      #review-view .legend {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.3em 1em;
+              font-size: 0.85rem;
+      
+      }
+      #review-view .legend .sw {
+              display: inline-block;
+              width: 1em;
+              height: 1em;
+              margin-right: 0.3em;
+              vertical-align: -0.15em;
+              border: 1px solid #888;
+              border-radius: 0.3em;
+      
+      }
+      #review-view .tree.readonly input {
+              cursor: default;
+      
+      }
+      #review-view .heat-none {
+              background-color: white !important;
+      
+      }
+      #review-view .heat0 {
+              background-color: #c9f2dc !important;
+      
+      }
+      #review-view .heat1 {
+              background-color: #fff2a8 !important;
+      
+      }
+      #review-view .heat2 {
+              background-color: #ffc78a !important;
+      
+      }
+      #review-view .heat3 {
+              background-color: #ff9d8f !important;
+      
+      }
+      #review-view .qrow {
+              display: grid;
+              grid-template-columns: auto 1fr;
+              gap: 0.1em 0.8em;
+              padding: 0.5em 0;
+              border-bottom: 1px solid #e3e8ee;
+      
+      }
+      #review-view .qrow .code {
+              font-weight: bold;
+              font-family: monospace;
+      
+      }
+      #review-view .qrow .meaning,
+      #review-view .qrow .stat {
+              grid-column: 1 / 3;
+              font-size: 0.9rem;
+      
+      }
+      #review-view .qrow .stat {
+              color: #666;
+              font-size: 0.8rem;
+      
+      }
+      @media (max-width: 600px) {
+        #review-view {
+                  padding: 0.5em;
+          
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="review.html">
+    <header>
+      <h1>復習</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <div id="review-view">
+      <div class="card" id="review-summary"></div>
+      <h2>文字・記号の苦手(直近5回)</h2>
+      <div class="legend">
+        <span><i class="sw heat-none"></i>記録なし</span>
+        <span><i class="sw heat0"></i>得意</span>
+        <span><i class="sw heat1"></i>誤り1</span>
+        <span><i class="sw heat2"></i>誤り2</span>
+        <span><i class="sw heat3"></i>誤り3以上</span>
+      </div>
+      <div class="tree-wrap" id="review-tree-wrap"><div class="tree readonly" id="review-tree"></div></div>
+      <div><button id="review-listen">苦手な文字を聞き取り</button></div>
+      <h2>Q符号・略符号の苦手</h2>
+      <div id="review-q"></div>
+      <div><button id="review-qcode">苦手なQ符号をクイズで出題</button></div>
+      <h2>運用手順の苦手</h2>
+      <div id="review-proc"></div>
+      <div><button id="review-proc-start">苦手な手順を出題</button></div>
+      <h2>計算の苦手</h2>
+      <div id="review-calc"></div>
+      <div><button id="review-calc-start">苦手な分野を出題</button></div>
+      <h2>記録</h2>
+      <p class="note">記録はこの端末のブラウザにだけ保存されています。</p>
+      <div><button id="review-clear">記録を消す</button></div>
+    </div>
+    <script src="assets/common.js"></script>
+    <script src="assets/tree-lib.js"></script>
+    <script src="assets/data-qcode.js"></script>
+    <script src="assets/data-proc.js"></script>
+    <script src="assets/data-keisan.js"></script>
+    <script>
+
+      // 復習: 学習記録から苦手を見える化し、そこから復習を始める
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        let tree = null;
+        const heatClass = (w) => (w < 0 ? "heat-none" : w === 0 ? "heat0" : w === 1 ? "heat1" : w === 2 ? "heat2" : "heat3");
+
+        function renderTree() {
+          if (!tree) {
+            tree = $("review-tree");
+            buildTree(tree);
+            tree.querySelectorAll("input").forEach((el) => {
+              el.value = el.dataset.char;
+              el.readOnly = true;
+              el.tabIndex = -1;
+            });
+          }
+          tree.querySelectorAll("input").forEach((el) => {
+            el.classList.remove("heat-none", "heat0", "heat1", "heat2", "heat3");
+            el.classList.add(heatClass(el.dataset.char ? morseStats.weakness("c:" + el.dataset.char) : -1));
+          });
+        }
+
+        function renderQ() {
+          const box = $("review-q");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("q:").slice(0, 15);
+          if (!keys.length) {
+            box.textContent = "苦手なQ符号・略符号の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = QCODES.find((x) => "q:" + x.c === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const code = document.createElement("span");
+            code.className = "code";
+            code.textContent = item.c;
+            const morse = document.createElement("span");
+            morse.textContent = item.morse;
+            const meaning = document.createElement("span");
+            meaning.className = "meaning";
+            meaning.textContent = item.m;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(code, morse, meaning, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function renderProc() {
+          const box = $("review-proc");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("p:").slice(0, 10);
+          if (!keys.length) {
+            box.textContent = "苦手な手順の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const item = PROCS.find((x) => "p:" + x.id === k);
+            if (!item) return;
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const art = document.createElement("span");
+            art.className = "code";
+            art.textContent = item.art;
+            const q = document.createElement("span");
+            q.textContent = item.q;
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(art, q, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function renderCalc() {
+          const box = $("review-calc");
+          box.replaceChildren();
+          const keys = morseStats.weakKeys("k:").slice(0, 10);
+          if (!keys.length) {
+            box.textContent = "苦手な計算分野の記録はまだありません。";
+            return;
+          }
+          keys.forEach((k) => {
+            const [, grade, cat] = k.split(":");
+            const s = morseStats.get(k);
+            const row = document.createElement("div");
+            row.className = "qrow";
+            const g = document.createElement("span");
+            g.className = "code";
+            g.textContent = `${grade}級`;
+            const name = document.createElement("span");
+            name.textContent = calcCats(grade, cat);
+            const stat = document.createElement("span");
+            stat.className = "stat";
+            stat.textContent = `直近5回で誤り ${morseStats.weakness(k)} 回(通算 ${s.miss} / ${s.n} 回)`;
+            row.append(g, name, stat);
+            box.appendChild(row);
+          });
+        }
+
+        function render() {
+          const t = morseStats.totals();
+          const weakChars = morseStats.weakKeys("c:").length;
+          const weakQ = morseStats.weakKeys("q:").length;
+          const weakP = morseStats.weakKeys("p:").length;
+          const weakK = morseStats.weakKeys("k:").length;
+          $("review-summary").textContent = t.n
+            ? `解答 ${t.n} 回、正答率 ${Math.round(((t.n - t.miss) / t.n) * 100)}%。苦手: 文字・記号 ${weakChars} 個、Q符号・略符号 ${weakQ} 個、運用手順 ${weakP} 問、計算 ${weakK} 分野。`
+            : "まだ学習記録がありません。聞き取り・クイズ・照合・手順・計算・木の Check で解答すると、ここに集計されます。";
+          renderTree();
+          renderQ();
+          renderProc();
+          renderCalc();
+          $("review-calc-start").disabled = !weakK;
+          $("review-proc-start").disabled = !weakP;
+          $("review-listen").disabled = !weakChars;
+          $("review-qcode").disabled = !weakQ;
+        }
+
+        // 苦手だけの復習は、各ページを ?weak=… つきで開く
+        $("review-listen").addEventListener("click", () => {
+          location.href = "listen.html?weak=1";
+        });
+        $("review-qcode").addEventListener("click", () => {
+          location.href = "qcode.html?weak=1";
+        });
+        $("review-proc-start").addEventListener("click", () => {
+          location.href = "procedure.html?weak=1";
+        });
+        $("review-calc-start").addEventListener("click", () => {
+          const keys = morseStats.weakKeys("k:");
+          if (!keys.length) return;
+          // 先頭の級のページを、苦手な分野を指定して開く(いまは1級のみ)
+          const grade = keys[0].split(":")[1];
+          const cats = keys.filter((k) => k.split(":")[1] === grade).map((k) => k.split(":")[2]);
+          location.href = `keisan-${grade}.html?weak=${cats.join(",")}`;
+        });
+        $("review-clear").addEventListener("click", () => {
+          if (confirm("学習記録をすべて消します。よろしいですか?")) {
+            morseStats.clear();
+            render();
+          }
+        });
+        window.reviewInit = render;
+      })();
+    
+      reviewInit();
+    </script>
+  </body>
+</html>

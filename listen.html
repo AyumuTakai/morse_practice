@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>聞き取り - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="聞き取り" />
+    <link rel="manifest" href="manifests/listen.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/listen-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+      #listen-view {
+              max-width: 720px;
+              margin: 0 auto;
+              padding: 1em;
+      
+      }
+      #listen-view button {
+              height: auto;
+              font-size: 1rem;
+              padding: 0.6em 1em;
+              margin: 0 0.3em 0.5em 0;
+              border-radius: 2em;
+              border: 1px solid lightslategray;
+              background-color: transparent;
+              cursor: pointer;
+      
+      }
+      #listen-view button.active {
+              background-color: lightslategray;
+              color: white;
+      
+      }
+      #listen-view .card {
+              background: white;
+              border: 1px solid #ccc;
+              border-radius: 1em;
+              padding: 1em;
+              text-align: center;
+      
+      }
+      #listen-view .big {
+              font-size: 2.5rem;
+              margin: 0.3em 0;
+              min-height: 1.3em;
+      
+      }
+      #listen-view .answer {
+              width: 4em;
+              height: auto;
+              font-size: 2rem;
+              padding: 0.2em;
+              border: 1px solid lightslategray;
+              border-radius: 0.5em;
+      
+      }
+      #listen-view .answer.correct {
+              background-color: aquamarine;
+      
+      }
+      #listen-view .answer.incorrect {
+              background-color: coral;
+      
+      }
+      #listen-view .tree-wrap {
+              margin-top: 1em;
+      
+      }
+      #listen-view .tree.readonly input {
+              cursor: default;
+              background-color: white;
+      
+      }
+      #listen-view .tree.readonly .sym {
+              background-color: lightyellow;
+      
+      }
+      #listen-view .tree input.hit {
+              outline: 3px solid #e67e22;
+              z-index: 2;
+      
+      }
+      #listen-view .note {
+              font-size: 0.85rem;
+              color: #555;
+      
+      }
+      @media (max-width: 600px) {
+        #listen-view {
+                  padding: 0.5em;
+          
+        }
+        #listen-view button {
+                  padding: 0.5em 0.8em;
+          
+        }
+        #listen-view .big {
+                  font-size: 2rem;
+          
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="tree.css" />
+  </head>
+  <body data-page="listen.html">
+    <header>
+      <h1>聞き取り</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <p class="scope-note">対象: 3級・2級・1級(4級では、モールスは出題されません)。聞き取りそのものは試験に出ません。音で符号のイメージをつかむための練習です。</p>
+    <div id="listen-view">
+      <div class="toolbar">
+        <button id="range-alpha" class="active">英字</button>
+        <button id="range-alnum">英字+数字</button>
+        <button id="range-all">すべて(記号を含む)</button>
+        <button id="range-weak">苦手</button>
+        <button id="listen-tree-toggle" class="active">木を見る: ON</button>
+      </div>
+      <div class="toolbar">
+        <button id="group-1" class="active">1文字</button>
+        <button id="group-3">3文字</button>
+        <button id="group-5">5文字</button>
+      </div>
+      <div class="card">
+        <div class="note" id="listen-score"></div>
+        <div class="big" id="listen-result">♪</div>
+        <div class="note" id="listen-given"></div>
+        <div id="listen-input-box"></div>
+        <div style="margin-top: 0.8em">
+          <button id="listen-replay">▶ 再生</button>
+          <button id="listen-answer">答える</button>
+          <button id="listen-giveup">わからない</button>
+          <button id="listen-next" hidden>次へ</button>
+        </div>
+        <div class="note" id="listen-missed"></div>
+      </div>
+      <div class="tree-wrap" id="listen-tree-wrap"><div class="tree readonly" id="listen-tree"></div></div>
+      <p class="note">
+        「▶ 再生」を押して音を聞き、鳴った文字を入力して「答える」(Enter でも可)。速度・音程・文字の間隔・自動加速は「設定」で変えられます。
+        大文字・小文字は区別しません。
+      </p>
+    </div>
+    <script src="assets/common.js"></script>
+    <script src="assets/tree-lib.js"></script>
+    <script>
+
+      // 聞き取り練習: ランダムな文字のモールス音を聞いて入力する
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const RANGES = {
+          alpha: (ch) => /^[A-Z]$/.test(ch),
+          alnum: (ch) => /^[A-Z0-9]$/.test(ch),
+          all: () => true,
+        };
+        let tree = null;
+        const st = {
+          range: "alpha", group: 1, current: null, last: null, total: 0, correct: 0, missed: new Set(), done: true, input: null,
+          speed: null, streak: 0,
+        };
+        const rnd = (n) => Math.floor(Math.random() * n);
+        const rampOn = () => !!morseSettings.load().ramp;
+        // 再生する速度。自動加速がONのときは、正解が続くと上がっていく
+        const listenWpm = () => {
+          const base = Number(morseSettings.load().wpm) || 15;
+          if (!rampOn()) return base;
+          if (!st.speed) st.speed = base;
+          return st.speed;
+        };
+        const play = () => morseAudio.play(st.current[1], { wpm: listenWpm() });
+
+        const weakSet = () => new Set(morseStats.weakKeys("c:").map((k) => k.slice(2)));
+        // 苦手: 直近に誤答のある文字・記号。記録がなければ英字から出題する
+        const pool = () => {
+          if (st.range === "weak") {
+            const w = weakSet();
+            const p = TREE_CODES.filter(([ch]) => ch !== "" && w.has(ch));
+            if (p.length) return p;
+          }
+          const r = st.range === "weak" ? "alpha" : st.range;
+          return TREE_CODES.filter(([ch]) => ch !== "" && RANGES[r](ch));
+        };
+
+        function ensureInput() {
+          if (st.input) return;
+          // ページ全体の input を一括操作する既存の処理に巻き込まれないよう、開いたときに作る
+          const el = document.createElement("input");
+          el.type = "text";
+          el.className = "answer";
+          el.maxLength = 1;
+          el.autocomplete = "off";
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") (st.done ? next : submit)();
+          });
+          $("listen-input-box").appendChild(el);
+          st.input = el;
+        }
+
+        function score() {
+          $("listen-score").textContent =
+            `正解 ${st.correct} / ${st.total}` +
+            (rampOn() ? `  速度 ${listenWpm()} WPM(自動加速)` : "") +
+            (st.range === "weak" && !weakSet().size ? "  ※苦手の記録がないため英字から出題" : "");
+          $("listen-missed").textContent = st.missed.size ? "間違えた文字: " + [...st.missed].join(" ") : "";
+        }
+
+        // 参考用の木(文字入り・読み取り専用)。ページ全体の input 一括操作に巻き込まれないよう、開いたときに作る
+        function ensureTree() {
+          if (tree) return;
+          tree = $("listen-tree");
+          buildTree(tree);
+          tree.querySelectorAll("input").forEach((el) => {
+            el.value = el.dataset.char;
+            el.readOnly = true;
+            el.tabIndex = -1;
+          });
+        }
+        const wrap = () => $("listen-tree-wrap");
+        // 答えの文字(群なら複数)の木のマスを光らせる
+        const mark = (chars) => {
+          let scrolled = false;
+          tree.querySelectorAll("input").forEach((el) => {
+            const hit = chars !== null && el.dataset.char !== "" && chars.includes(el.dataset.char);
+            el.classList.toggle("hit", hit);
+            // 最初の答えのマスが画面外なら、横スクロールで見える位置へ
+            if (hit && !scrolled) {
+              scrolled = true;
+              wrap().scrollTo({ left: el.offsetLeft - wrap().clientWidth / 2, behavior: "smooth" });
+            }
+          });
+        };
+
+        function next() {
+          ensureInput();
+          ensureTree();
+          mark(null);
+          if (!rampOn()) st.speed = null;
+          const p = pool();
+          // 1文字のときは直前と同じ文字を避ける。群のときは、各文字を無作為に選ぶ
+          const picks = [];
+          for (let i = 0; i < st.group; i++) {
+            const c = p.filter(([ch]) => st.group > 1 || p.length < 2 || ch !== st.last);
+            picks.push(c[rnd(c.length)]);
+          }
+          st.current = [picks.map((x) => x[0]).join(""), picks.map((x) => x[1]).join(" "), picks.map((x) => x[0])];
+          st.last = st.current[0];
+          st.done = false;
+          st.input.maxLength = st.group;
+          st.input.style.width = `${Math.max(4, st.group * 1.3 + 1.5)}em`;
+          $("listen-given").textContent = "";
+          st.input.value = "";
+          st.input.classList.remove("correct", "incorrect");
+          $("listen-result").textContent = "♪";
+          $("listen-next").hidden = true;
+          $("listen-answer").hidden = false;
+          $("listen-giveup").hidden = false;
+          score();
+          st.input.focus();
+        }
+
+        function finish(given) {
+          const [str, code, chars] = st.current;
+          const g = given.toUpperCase();
+          const isCorrect = g === str;
+          st.done = true;
+          st.total++;
+          // 文字ごとに、その位置で合っていたかを学習記録に残す
+          chars.forEach((c, i) => {
+            const ok = g[i] === c;
+            morseStats.record("c:" + c, ok);
+            if (!ok) st.missed.add(c);
+          });
+          if (isCorrect) st.correct++;
+          // 自動加速: 5問続けて正解したら 1 WPM 上げる(上限30)
+          if (isCorrect) {
+            st.streak++;
+            if (rampOn() && st.streak >= 5) {
+              st.speed = Math.min(30, listenWpm() + 1);
+              st.streak = 0;
+            }
+          } else st.streak = 0;
+          st.input.classList.add(isCorrect ? "correct" : "incorrect");
+          mark(chars);
+          const dd = code.replace(/\./g, "・").replace(/-/g, "－");
+          $("listen-result").textContent = (isCorrect ? "正解! " : g ? "不正解… " : "") + `${str}  ${dd}`;
+          $("listen-given").textContent = !isCorrect && g ? `あなたの答え: ${g}` : "";
+          $("listen-answer").hidden = true;
+          $("listen-giveup").hidden = true;
+          $("listen-next").hidden = false;
+          $("listen-next").focus();
+          score();
+        }
+
+        function submit() {
+          const given = st.input.value.trim();
+          if (!given || st.done) return;
+          finish(given);
+        }
+
+        $("listen-answer").addEventListener("click", submit);
+        $("listen-giveup").addEventListener("click", () => !st.done && finish(""));
+        $("listen-next").addEventListener("click", next);
+        $("listen-replay").addEventListener("click", () => {
+          if (st.current) play();
+          if (st.input && !st.done) st.input.focus();
+        });
+        const setRange = (r) => {
+          st.range = r;
+          ["alpha", "alnum", "all", "weak"].forEach((x) => $("range-" + x).classList.toggle("active", x === r));
+          st.total = 0;
+          st.correct = 0;
+          st.missed.clear();
+          next();
+        };
+        ["alpha", "alnum", "all", "weak"].forEach((r) => $("range-" + r).addEventListener("click", () => setRange(r)));
+        const setGroup = (n) => {
+          st.group = n;
+          [1, 3, 5].forEach((x) => $("group-" + x).classList.toggle("active", x === n));
+          st.total = 0;
+          st.correct = 0;
+          st.streak = 0;
+          st.missed.clear();
+          next();
+        };
+        [1, 3, 5].forEach((n) => $("group-" + n).addEventListener("click", () => setGroup(n)));
+        // 復習画面から: 苦手な文字を聞き取りで出題する
+        window.listenStartWeak = () => {
+          ensureInput();
+          setRange("weak");
+        };
+        $("listen-tree-toggle").addEventListener("click", (e) => {
+          const hide = !wrap().hidden;
+          wrap().hidden = hide;
+          e.target.textContent = "木を見る: " + (hide ? "OFF" : "ON");
+          e.target.classList.toggle("active", !hide);
+          if (!hide) relayoutTrees(true);
+        });
+        window.listenInit = () => {
+          ensureInput();
+          if (!st.current) next();
+          else st.input.focus();
+          if (!st.centered) {
+            wrap().scrollLeft = (wrap().scrollWidth - wrap().clientWidth) / 2;
+            st.centered = true;
+          }
+        };
+      })();
+    
+      listenInit();
+      if (new URLSearchParams(location.search).get("weak")) listenStartWeak();
+    </script>
+  </body>
+</html>

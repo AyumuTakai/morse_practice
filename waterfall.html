@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>送受信機のスペクトル - アマチュア無線 受験勉強</title>
+    <meta name="theme-color" content="#778899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="送受信機" />
+    <link rel="manifest" href="manifests/waterfall.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/waterfall-180.png" />
+    <link rel="stylesheet" href="assets/common.css" />
+    <style>
+#wf-app{--bg:#faf9f5;--fg:#2c2c2a;--mut:#6b6a64;--line:#a8a69e;--box:#ffffff;--boxs:#888780;--sel:#534AB7;--selbg:#EEEDFE;--wave:#7F77DD;--fill:#ffffff;--acc:#D85A30;--grid:#d3d1c7;--bad:#E24B4A}
+@media (prefers-color-scheme:dark){#wf-app{--bg:#1f1e1d;--fg:#ecebe6;--mut:#a8a69e;--line:#6b6a64;--box:#2a2927;--boxs:#888780;--sel:#AFA9EC;--selbg:#3C3489;--wave:#AFA9EC;--fill:#1f1e1d;--acc:#F0997B;--grid:#444441;--bad:#F09595}}
+#wf-app{background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.6;min-height:calc(100vh - 3rem)}
+#wf-app main{max-width:860px;margin:0 auto;padding:16px}
+#wf-app h2{font-size:20px;font-weight:600;margin:4px 0 4px}
+#wf-app p.lead{margin:0 0 10px;color:var(--mut);font-size:14px}
+#wf-app .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+#wf-app .tabs button{font:inherit;font-size:14px;padding:6px 12px;border-radius:8px;border:1px solid var(--grid);background:var(--box);color:var(--fg);cursor:pointer}
+#wf-app .tabs button.on{border-color:var(--sel);background:var(--selbg);font-weight:600}
+#wf-app .card{background:var(--box);border:1px solid var(--grid);border-radius:12px;padding:10px;margin-bottom:12px}
+#wf-app #desc{font-size:14px;margin:0 4px 6px;color:var(--mut)}
+#wf-app svg text{fill:var(--fg);font-family:inherit}
+#wf-app .blk rect{fill:var(--box);stroke:var(--boxs);stroke-width:1.2}
+#wf-app .blk{cursor:pointer}
+#wf-app .blk:hover rect{stroke:var(--sel)}
+#wf-app .blk.on rect{fill:var(--selbg);stroke:var(--sel);stroke-width:2}
+#wf-app .blk text{font-size:15px;pointer-events:none}
+#wf-app .wire{stroke:var(--line);stroke-width:1.4;fill:none}
+#wf-app #ttl{font-size:17px;font-weight:600;margin:2px 4px 0}
+#wf-app #cap{font-size:14.5px;margin:6px 4px 2px}
+#wf-app .ctl{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin:6px 4px 0;color:var(--mut)}
+#wf-app .ctl label{display:flex;align-items:center;gap:6px;cursor:pointer}
+#wf-app .hint{font-size:13px;color:var(--mut);margin:4px 4px 0}
+    </style>
+  </head>
+  <body data-page="waterfall.html">
+    <header>
+      <h1>送受信機のスペクトル</h1>
+      <nav>
+        <select id="page-select" aria-label="ページの切り替え"></select>
+      </nav>
+    </header>
+    <div id="wf-app">
+<main>
+<h2>送信機・受信機：各段の出力スペクトル</h2>
+<p class="lead">機器を選び、ブロックをタップすると、その段の出力がウォーターフォール図（横＝周波数、奥行き＝時間、高さ＝強さ）で表示されます。赤は妨害やひずみの成分です。</p>
+<div class="tabs" id="tabs"></div>
+
+<div class="card">
+<div id="desc"></div>
+<svg id="dia" viewBox="0 0 770 400" width="100%" role="img" aria-label="ブロック図"></svg>
+</div>
+
+<div class="card">
+<div id="ttl"></div>
+<svg id="wf" viewBox="0 0 760 400" width="100%" role="img" aria-label="ウォーターフォール図"></svg>
+<div id="cap"></div>
+<div class="ctl" id="ctl"></div>
+<p class="hint" id="hint"></p>
+</div>
+</main>
+    </div>
+    <script src="assets/common.js"></script>
+    <script>
+const NS='http://www.w3.org/2000/svg';
+function el(tag,at,par){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(par)par.appendChild(e);return e;}
+function css(n){return getComputedStyle(document.getElementById('wf-app')).getPropertyValue(n).trim();}
+
+/* ---------- common signal helpers ---------- */
+const comp=[{f:2.5,a:1,w:1.3,p:0.2},{f:5,a:0.7,w:2.1,p:1.7},{f:8,a:0.45,w:3.3,p:3.1}];
+function env(t){const s1=t>0.04&&t<0.46?Math.sin(Math.PI*(t-0.04)/0.42)**2:0;const s2=t>0.55&&t<0.96?0.65*Math.sin(Math.PI*(t-0.55)/0.41)**2:0;return s1+s2;}
+function voice(t,k){k=k||1;return comp.map(c=>({f:c.f,a:k*c.a*env(t)*(0.65+0.35*Math.sin(2*Math.PI*c.w*t+c.p))}));}
+function lvl(t){return voice(t).reduce((s,o)=>s+o.a,0)/2.15;}
+const FACT=[1];for(let i=1;i<60;i++)FACT[i]=FACT[i-1]*i;
+function J(n,x){let s=0;for(let k=0;k<25;k++)s+=((k%2?-1:1)*Math.pow(x/2,2*k+n))/(FACT[k]*FACT[k+n]);return s;}
+function fmLines(fc,fm,beta,amp,bw){const r=[];for(let n=-10;n<=10;n++){const a=amp*Math.abs(J(Math.abs(n),beta));if(a>0.006)r.push({f:fc+n*fm,a:a,bad:bw!==undefined&&Math.abs(n*fm)>bw});}return r;}
+function scale(ls,k){return ls.map(l=>Object.assign({},l,{a:(l.a||0)*k,noise:l.noise?l.noise*k:undefined}));}
+function shift(ls,df){return ls.map(l=>Object.assign({},l,{f:l.f+df}));}
+function noise(lev,f0,f1,shape){return {noise:lev,f0:f0,f1:f1,shape:shape||(()=>1)};}
+
+/* ---------- devices ---------- */
+const D={};
+
+D['ssb-tx']={name:'SSB 送信機',desc:'SSB（J3E）送信機。平衡変調器で搬送波を抑圧し、フィルタで片側の側波帯だけを取り出します。',
+ blocks:[['af',0,0,'低周波','増幅器'],['bm',1,0,'平衡','変調器'],['bpf1',2,0,'第1帯域','フィルタ'],['if',3,0,'中間周波','増幅器'],['lo1',1,1,'第1局部','発振器'],
+  ['mix',0,2,'周波数','混合器'],['bpf2',1,2,'第2帯域','フィルタ'],['exc',2,2,'励振','増幅器'],['pa',3,2,'電力','増幅器'],['lo2',0,3,'第2局部','発振器'],['alc',3,3,'ALC','回路']],
+ wires:[['in','af','音声'],['h','af','bm'],['h','bm','bpf1'],['h','bpf1','if'],['v','lo1','bm'],['wrap','if','mix'],['h','mix','bpf2'],['h','bpf2','exc'],['h','exc','pa'],['v','lo2','mix'],['vd','pa','alc'],['fb','alc','if'],['ant','pa']],
+ ticks:[[5,'音声'],[30,'f_IF'],[55,'f₂'],[90,'f₂+f_IF']],
+ opts:[['loud','大きな声で話す',false],['alc','ALC を有効にする',true]],
+ hint:'「大きな声」をオンにして、ALC のオン／オフで電力増幅器の出力を比べてみてください。',
+ calc(t,o){const v=voice(t,o.loud?2:1);const usb=v.map(x=>({f:30+x.f,a:x.a*0.25}));
+  const raw=Math.max(0,...usb.map(x=>x.a*3));const g=o.alc&&raw>1?1/raw:1;
+  const ifo=scale(usb,2*g),sum=shift(scale(ifo,0.5),55),diff=scale(ifo,0.5).map(x=>({f:55-x.f,a:x.a})),exc=scale(sum,2);
+  let pa=scale(exc,1.5);const pk=Math.max(0,...pa.map(x=>x.a));
+  if(pk>1){const over=pk-1;pa=pa.map(x=>({f:x.f,a:Math.min(x.a,1)}));const fs=pa.map(x=>x.f-85);const sp=[];
+   for(let i=0;i<fs.length;i++)for(let j=0;j<fs.length;j++)if(i!==j)sp.push({f:85+2*fs[i]-fs[j],a:0.35*over*Math.min(pa[i].a,pa[j].a),bad:1});pa=pa.concat(sp);}
+  return {af:scale(v,0.5),lo1:[{f:30,a:0.6}],bm:[].concat(...v.map(x=>[{f:30-x.f,a:x.a*0.25},{f:30+x.f,a:x.a*0.25}])),bpf1:usb,if:ifo,mix:diff.concat(sum),lo2:[{f:55,a:0.6}],bpf2:sum,exc:exc,pa:pa,_raw:raw,_g:g};},
+ charts:{alc(o,calc){return {series:[{fn:t=>calc(t)._raw,style:'dash',label:'ALC なしの出力ピーク'},{fn:t=>Math.min(calc(t)._raw*calc(t)._g,1),style:'solid',label:o.alc?'ALC ありの出力ピーク':'実際の出力（頭打ち＝ひずみ）'}],limit:[1,'上限'],
+  note:!o.loud?'「大きな声で話す」をオンにすると ALC が働きます':(!o.alc?'ALC オフ：上限を超えた分はひずみになります':null)};}},
+ info:{af:['低周波増幅器の出力','音声を必要なレベルまで増幅します。周波数は低いままです。'],
+  lo1:['第1局部発振器の出力','中間周波数 f_IF の、振幅一定の正弦波です。'],
+  bm:['平衡変調器の出力（DSB）','f_IF の両側に、上側波帯と下側波帯ができます。下側は左右が反転した並びです。搬送波は打ち消されて出ていません。'],
+  bpf1:['第1帯域フィルタの出力（SSB）','上側波帯だけを通しました。音声のスペクトルを、f_IF だけ右へ平行移動した形です。'],
+  if:['中間周波増幅器の出力','SSB 信号を増幅します。ALC が働くと、ここの利得が下げられます。'],
+  mix:['周波数混合器の出力','第2局部発振器 f₂ と混ぜると、和と差の2つができます。差のほうは並びが反転します。'],
+  lo2:['第2局部発振器の出力','周波数 f₂ の、振幅一定の正弦波です。'],
+  bpf2:['第2帯域フィルタの出力','和の成分だけを取り出しました。これが送信周波数の SSB 信号です。'],
+  exc:['励振増幅器の出力','電力増幅器を駆動できるレベルまで増幅します。'],
+  pa:['電力増幅器の出力','直線増幅器（AB 級、B 級のプッシュプル）で大電力にします。過大な入力でひずむと、スプリアス（赤）が現れます。'],
+  alc:['ALC 回路の働き','電力増幅器の出力が上限を超えそうなとき、中間周波増幅器の利得を下げます。']}};
+
+D['am-tx']={name:'AM 送信機',desc:'AM（A3E）送信機（高電力変調）。水晶発振器の出力を逓倍して送信周波数にし、終段の電力増幅器で振幅変調します。',
+ blocks:[['osc',0,0,'水晶','発振器'],['buf',1,0,'緩衝','増幅器'],['mul',2,0,'周波数','逓倍器'],['exc',3,0,'励振','増幅器'],['af',1,2,'低周波','増幅器'],['mod',2,2,'変調器',''],['pa',3,2,'電力増幅器','（被変調）']],
+ wires:[['h','osc','buf'],['h','buf','mul'],['h','mul','exc'],['down','exc','pa'],['in','af','音声'],['h','af','mod'],['h','mod','pa'],['ant','pa']],
+ ticks:[[5,'音声'],[20,'f₀'],[60,'3f₀（送信）']],
+ opts:[['loud','大きな声で話す（過変調）',false]],
+ hint:'「大きな声」をオンにすると、変調度が 100% を超えて、帯域外にひずみ成分（赤）が広がります。',
+ calc(t,o){const v=voice(t,o.loud?2:1);const m=v.reduce((s,x)=>s+x.a,0)*0.35;
+  let pa=[{f:60,a:0.6}].concat(...v.map(x=>[{f:60-x.f,a:0.6*x.a*0.35/2},{f:60+x.f,a:0.6*x.a*0.35/2}]));
+  if(m>1){const over=m-1;v.forEach((x,i)=>v.forEach((y,j)=>{if(i<=j){const f=x.f+y.f;pa.push({f:60+f,a:0.12*over,bad:1},{f:60-f,a:0.12*over,bad:1});}}));}
+  return {osc:[{f:20,a:0.4}],buf:[{f:20,a:0.5}],mul:[{f:60,a:0.5},{f:40,a:0.05},{f:80,a:0.05}],exc:[{f:60,a:0.6}],af:scale(v,0.4),mod:scale(v,0.7),pa:pa};},
+ charts:{},
+ info:{osc:['水晶発振器の出力','安定した周波数 f₀ の正弦波をつくります。'],
+  buf:['緩衝増幅器の出力','後段の影響（負荷の変動）が発振器に及ばないように、間に入れる増幅器です。周波数はそのままです。'],
+  mul:['周波数逓倍器の出力','ひずませて高調波をつくり、同調回路で 3 倍の 3f₀ を取り出します。ほかの高調波がわずかに残ります。'],
+  exc:['励振増幅器の出力','電力増幅器を駆動できるレベルまで増幅します。この時点ではまだ無変調（搬送波だけ）です。'],
+  af:['低周波増幅器の出力','マイクからの音声を増幅します。'],
+  mod:['変調器の出力','音声を電力増幅し、変調に必要な大きな電力にします。高電力変調では、この出力で終段の電源電圧を変化させます。'],
+  pa:['電力増幅器（被変調）の出力','搬送波 3f₀ の両側に側波帯ができた AM 波です。搬送波は声がなくても常に出ています。']}};
+
+D['fm-tx']={name:'FM 送信機（間接）',desc:'間接 FM 方式の送信機。位相変調器で小さく変調し、周波数逓倍器で周波数偏移を大きくします。IDC 回路で偏移が大きくなりすぎないように制限します。',
+ blocks:[['osc',0,0,'水晶','発振器'],['pm',1,0,'位相','変調器'],['mul',2,0,'周波数','逓倍器'],['exc',3,0,'励振','増幅器'],['af',0,2,'低周波','増幅器'],['idc',1,2,'IDC','回路'],['pa',3,2,'電力','増幅器']],
+ wires:[['h','osc','pm'],['h','pm','mul'],['h','mul','exc'],['down','exc','pa'],['in','af','音声'],['h','af','idc'],['v','idc','pm'],['ant','pa']],
+ ticks:[[5,'音声'],[10,'f₀'],[60,'6f₀（送信）']],
+ opts:[['loud','大きな声で話す',false],['idc','IDC を有効にする',true]],
+ hint:'「大きな声」をオンにして IDC をオフにすると、周波数偏移が大きくなりすぎて、占有周波数帯幅を超えた成分（赤）が出ます。',
+ calc(t,o){const raw=lvl(t)*(o.loud?2:1);const eff=o.idc?Math.min(raw,1):raw;const k=raw>0?eff/raw:1;const v=voice(t,o.loud?2:1);const b=2.5*eff;
+  return {osc:[{f:10,a:0.4}],af:scale(v,0.4),idc:scale(v,0.4*k),pm:fmLines(10,2.5,b/6,0.45),mul:fmLines(60,2.5,b,0.5,12.5),exc:fmLines(60,2.5,b,0.6,12.5),pa:fmLines(60,2.5,b,0.9,12.5)};},
+ charts:{},
+ info:{osc:['水晶発振器の出力','安定した周波数 f₀ の正弦波をつくります。'],
+  af:['低周波増幅器の出力','音声を増幅します。'],
+  idc:['IDC 回路の出力','IDC（瞬時偏移制御）回路は、プリエンファシスと振幅制限を行います。大きな声でも音声の振幅を一定以下に抑えて、周波数偏移が規定を超えないようにします。'],
+  pm:['位相変調器の出力','積分した音声で位相変調すると、周波数変調と同じ結果になります。ここでは変調指数がまだ小さいので、側帯波は1対ほどだけです。'],
+  mul:['周波数逓倍器の出力（6 逓倍）','周波数を 6 倍にすると、周波数偏移（変調指数）も 6 倍になります。側帯波の間隔は音声の周波数のままです。'],
+  exc:['励振増幅器の出力','電力増幅器を駆動できるレベルまで増幅します。'],
+  pa:['電力増幅器の出力','FM 波は振幅が一定なので、効率のよい C 級増幅が使えます。声が大きいほど側帯波が外側まで広がります。声がないときは搬送波だけになります。']}};
+
+D['am-rx']={name:'AM 受信機（スーパー）',desc:'AM 用のスーパーヘテロダイン受信機。受信周波数を一定の中間周波数 f_IF に変換してから、増幅と選択を行います。',
+ blocks:[['rf',0,0,'高周波','増幅器'],['mix',1,0,'周波数','混合器'],['ifl',2,0,'中間周波','フィルタ'],['ifa',3,0,'中間周波','増幅器'],['lo',1,1,'局部','発振器'],['det',0,2,'検波器',''],['afa',1,2,'低周波','増幅器'],['agc',0,3,'AGC','回路']],
+ wires:[['antin','rf'],['h','rf','mix'],['h','mix','ifl'],['h','ifl','ifa'],['v','lo','mix'],['wrap','ifa','det'],['h','det','afa'],['vd','det','agc'],['fb','agc','ifa'],['spk','afa']],
+ ticks:[[5,'音声'],[20,'f_IF'],[30,'イメージ'],[50,'局発'],[70,'受信'],[85,'隣接']],
+ opts:[['fade','フェージング（受信強度が変動）',false],['agc','AGC を有効にする',true]],
+ hint:'赤はイメージ周波数と隣接チャネルの妨害波です。高周波増幅器と中間周波フィルタで、それぞれどう減るかを見てください。',
+ calc(t,o){const s=o.fade?0.15+0.85*(0.5+0.5*Math.sin(2*Math.PI*1.6*t+1.2))**2:1;const v=voice(t);
+  const des=[{f:70,a:0.3*s}].concat(...v.map(x=>[{f:70-x.f,a:0.3*s*x.a*0.35/2},{f:70+x.f,a:0.3*s*x.a*0.35/2}]));
+  const adj=[{f:85,a:0.25,bad:1},{f:82,a:0.04,bad:1},{f:88,a:0.04,bad:1}];const img=[{f:30,a:0.25,bad:1},{f:26,a:0.04,bad:1},{f:34,a:0.04,bad:1}];
+  const rf=scale(des,2).concat(scale(adj,1.3),scale(img,0.12));
+  const conv=ls=>ls.map(l=>Object.assign({},l,{f:Math.abs(l.f-50),a:l.a*0.8}));
+  const mix=conv(rf).concat([{f:50,a:0.08}]);const ifl=mix.filter(l=>Math.abs(l.f-20)<=8.5);
+  const g=o.agc?Math.min(6,Math.max(0.3,0.55/(0.9*s))):1;const ifa=scale(ifl,1.875*g);const C=0.9*s*g;
+  const det=[{f:0.4,a:C*0.7}].concat(v.map(x=>({f:x.f,a:C*x.a*0.35})));
+  return {rf:rf,lo:[{f:50,a:0.5}],mix:mix,ifl:ifl,ifa:ifa,det:det,afa:v.map(x=>({f:x.f,a:Math.min(1,C*x.a*0.35*1.8)})),_ant:des.concat(adj,img),_s:s,_C:C};},
+ charts:{agc(o,calc){return {series:[{fn:t=>calc(t)._s,style:'gray',label:'受信電波の強さ'},{fn:t=>0.9*calc(t)._s,style:'dash',label:'AGC なしの IF 出力'},{fn:t=>o.agc?calc(t)._C:0.9*calc(t)._s,style:'solid',label:o.agc?'AGC ありの IF 出力':'IF 出力（AGC オフ）'}],
+  note:!o.fade?'「フェージング」をオンにすると AGC の働きが分かります':null};}},
+ info:{rf:['高周波増幅器の出力','受信周波数に同調して増幅します。イメージ周波数の妨害波は、ここで大きく減衰させます。隣接チャネルの電波は周波数が近いため、あまり減りません。'],
+  lo:['局部発振器の出力','受信周波数より f_IF だけ低い周波数（下側ヘテロダイン）を出します。'],
+  mix:['周波数混合器の出力','受信波は f_IF に変換されます。イメージ周波数（局発 − f_IF）の電波も、同じ f_IF に変換されてしまいます。これがイメージ混信で、ここでは取り除けません。隣接チャネルは f_IF の近くに移ります。'],
+  ifl:['中間周波フィルタの出力','f_IF 付近だけを通すので、隣接チャネルが取り除かれます。選択度の大部分は、ここで決まります。'],
+  ifa:['中間周波増幅器の出力','一定の周波数 f_IF で増幅するので、安定して大きな利得が得られます。AGC が利得を自動調整します。'],
+  det:['検波器の出力','包絡線検波で音声を取り出します。直流分（左端）は、受信の強さに比例します。'],
+  afa:['低周波増幅器の出力','直流分を除いた音声を増幅し、スピーカを鳴らします。'],
+  agc:['AGC 回路の働き','検波出力の直流分（受信の強さ）を使って、中間周波増幅器の利得を自動調整します。受信の強さが変動しても、出力をほぼ一定に保ちます。']},
+ startAnt:true};
+
+D['ssb-rx']={name:'SSB 受信機',desc:'SSB（J3E）受信機。搬送波がないので、受信機の中で局部発振器（BFO）の信号を加えて、プロダクト検波で音声を取り出します。',
+ blocks:[['rf',0,0,'高周波','増幅器'],['mix',1,0,'周波数','混合器'],['bpf',2,0,'帯域','フィルタ'],['ifa',3,0,'中間周波','増幅器'],['lo',1,1,'局部','発振器'],['det',0,2,'検波器','（プロダクト）'],['afa',1,2,'低周波','増幅器'],['bfo',0,3,'復調用','局部発振器']],
+ wires:[['antin','rf'],['h','rf','mix'],['h','mix','bpf'],['h','bpf','ifa'],['v','lo','mix'],['wrap','ifa','det'],['h','det','afa'],['v','bfo','det'],['spk','afa']],
+ ticks:[[5,'音声'],[20,'f_IF'],[50,'局発'],[70,'受信'],[83,'隣接']],
+ opts:[['clar','BFO の周波数がずれている',false]],
+ hint:'BFO がずれると、音声の周波数全体がずれます（声が高く、または低くなる）。クラリファイアで BFO の周波数を微調整して直します。',
+ calc(t,o){const v=voice(t);const d=o.clar?1.5:0;const des=v.map(x=>({f:70+x.f,a:x.a*0.15}));const adj=[{f:82,a:0.12,bad:1},{f:84.5,a:0.08,bad:1}];
+  const rf=scale(des,2).concat(scale(adj,1.5));const mix=rf.map(l=>Object.assign({},l,{f:l.f-50,a:l.a*0.8})).concat([{f:50,a:0.08}]);
+  const bpf=mix.filter(l=>l.f>=19.5&&l.f<=30.5);const ifa=scale(bpf,2.5);
+  const det=ifa.map(l=>({f:l.f-(20-d),a:l.a})).concat(ifa.map(l=>({f:l.f+(20-d),a:l.a*0.4})));
+  return {rf:rf,lo:[{f:50,a:0.5}],mix:mix,bpf:bpf,ifa:ifa,bfo:[{f:20-d,a:0.5}],det:det,afa:ifa.map(l=>({f:l.f-(20-d),a:Math.min(1,l.a*1.6)})),_ant:des.concat(adj)};},
+ charts:{},
+ info:{rf:['高周波増幅器の出力','受信周波数付近を増幅します。SSB 波は、音声のスペクトルを受信周波数のところへ平行移動した形です。'],
+  lo:['局部発振器の出力','受信周波数を f_IF に変換するための信号です。'],
+  mix:['周波数混合器の出力','SSB 信号が f_IF のすぐ上に移りました。隣接局も近くに移ってきます。'],
+  bpf:['帯域フィルタの出力','SSB の帯域幅（約 3 kHz）だけを通す鋭いフィルタで、隣接局を取り除きます。'],
+  ifa:['中間周波増幅器の出力','SSB 信号を増幅します。'],
+  bfo:['復調用局部発振器（BFO）の出力','送信側で抑圧された搬送波の代わりに、f_IF の信号を受信機の中でつくります。'],
+  det:['検波器（プロダクト検波）の出力','IF 信号と BFO を掛け合わせると、差の周波数として音声が戻ります。右側の和の成分は、後段のローパスフィルタで除きます。'],
+  afa:['低周波増幅器の出力','取り出した音声を増幅します。BFO がずれていると、音声全体の周波数がずれます。']},
+ startAnt:true};
+
+D['fm-rx']={name:'FM 受信機',desc:'FM 受信機。振幅制限器で振幅の変動を取り除き、周波数弁別器で周波数の変化を音声に戻します。',
+ blocks:[['rf',0,0,'高周波','増幅器'],['mix',1,0,'周波数','混合器'],['ifa',2,0,'中間周波','増幅器'],['lim',3,0,'振幅','制限器'],['lo',1,1,'局部','発振器'],['disc',0,2,'周波数','弁別器'],['dem',1,2,'デエン','ファシス'],['afa',2,2,'低周波','増幅器'],['sq',0,3,'スケルチ','回路']],
+ wires:[['antin','rf'],['h','rf','mix'],['h','mix','ifa'],['h','ifa','lim'],['v','lo','mix'],['wrap','lim','disc'],['h','disc','dem'],['h','dem','afa'],['vd','disc','sq'],['rl','sq','afa'],['spk','afa']],
+ ticks:[[5,'音声'],[20,'f_IF'],[50,'局発'],[70,'受信']],
+ opts:[['weak','弱い電波（雑音が多い）',false],['cut','電波が途中で途切れる',false],['sq','スケルチを有効にする',true]],
+ hint:'奥行き方向の高さの変化に注目してください。中間周波増幅器までは強さが変動しますが、振幅制限器の後は一定になります。',
+ calc(t,o){const c=o.cut&&t>0.7?0:1;const amp=0.25*(0.6+0.4*Math.sin(2*Math.PI*2.2*t))*c;const b=2.5*lvl(t);const nb=o.weak?0.03:0.008;const v=voice(t);
+  const pre=f=>Math.sqrt(1+(f/4)**2),de=f=>1/Math.sqrt(1+(f/4)**2);
+  const ant=fmLines(70,2.5,b,amp).concat([noise(nb,0,100)]);
+  const rf=scale(fmLines(70,2.5,b,amp),2).concat([noise(nb*2,0,100)]);
+  const mix=fmLines(20,2.5,b,amp*1.6).concat([{f:50,a:0.08},noise(nb*1.6,0,100)]);
+  const ifa=fmLines(20,2.5,b,amp*4).concat([noise(nb*4,8,32)]);
+  const lim=c?fmLines(20,2.5,b,0.55).concat([noise(o.weak?0.03:0.005,8,32)]):[noise(0.2,8,32)];
+  const tri=f=>f/12;
+  const disc=c?v.map(x=>({f:x.f,a:0.3*x.a*pre(x.f)})).concat([noise(o.weak?0.3:0.04,0,12,tri)]):[noise(0.6,0,12,tri)];
+  const deL=ls=>ls.map(l=>l.noise?Object.assign({},l,{shape:f=>l.shape(f)*de(f)}):Object.assign({},l,{a:l.a*de(l.f)}));
+  const dem=deL(disc);let afa=dem.map(l=>l.noise?Object.assign({},l,{noise:l.noise*1.6}):Object.assign({},l,{a:l.a*1.6}));
+  if(o.sq&&!c)afa=[];
+  return {rf:rf,lo:[{f:50,a:0.5}],mix:mix,ifa:ifa,lim:lim,disc:disc,dem:dem,afa:afa,_ant:ant,_c:c,_l:lvl(t)};},
+ charts:{sq(o,calc){return {series:[{fn:t=>0.9*calc(t)._c,style:'gray',label:'受信電波の有無'},{fn:t=>calc(t)._c?(o.weak?0.3:0.06):0.7,style:'dash',label:'弁別器出力の雑音'},{fn:t=>{const r=calc(t);return r._c?0.6*r._l:(o.sq?0:0.8);},style:'solid',label:'スピーカへの出力'}],
+  note:!o.cut?'「電波が途中で途切れる」をオンにするとスケルチの働きが分かります':(!o.sq?'スケルチ オフ：電波がないと大きな雑音が鳴ります':null)};}},
+ info:{rf:['高周波増幅器の出力','FM 波を増幅します。フェージングで強さが変動しています（奥行き方向の高さの変化）。'],
+  lo:['局部発振器の出力','受信周波数を f_IF に変換するための信号です。'],
+  mix:['周波数混合器の出力','FM 波が f_IF に移りました。側帯波の並びはそのままです。'],
+  ifa:['中間周波増幅器の出力','FM の帯域幅に合わせた帯域で増幅します。強さの変動は、まだ残っています。'],
+  lim:['振幅制限器の出力','振幅を一定に切りそろえます。フェージングや雑音による振幅の変動が消えて、高さが一定になります。電波がないときは、雑音が同じ高さまで増幅されます。'],
+  disc:['周波数弁別器の出力','周波数の変化を電圧の変化に変えて、音声を取り出します。FM 特有の雑音は、高い周波数ほど大きくなります（三角雑音）。音声も、送信側のプリエンファシスで高音が強調されています。'],
+  dem:['デエンファシス回路の出力','高い周波数を弱めます。これで音声は元のバランスに戻り、高域の雑音も減ります。'],
+  afa:['低周波増幅器の出力','音声を増幅してスピーカを鳴らします。スケルチが閉じているときは、出力が止まります。'],
+  sq:['スケルチ回路の働き','弁別器出力の雑音が大きいとき（電波がないとき）は、低周波増幅器を止めて、「ザー」という雑音を消します。']},
+ startAnt:true};
+
+
+D['fm-tx-d']={name:'FM 送信機（直接）',desc:'直接 FM 方式の送信機。音声で電圧制御発振器（VCO）の周波数を直接変化させます。PLL（基準発振器、位相比較器、低域フィルタ、分周器）で、中心周波数を水晶並みに安定させます。',
+ blocks:[['af',0,0,'低周波','増幅器'],['idc',1,0,'IDC','回路'],['vco',2,0,'電圧制御','発振器 VCO'],['exc',3,0,'励振','増幅器'],['ref',0,1,'基準','発振器'],['pc',1,1,'位相','比較器'],['lpf',2,1,'低域','フィルタ'],['div',1,2,'分周器','（÷N）'],['pa',3,2,'電力','増幅器']],
+ wires:[['in','af','音声'],['h','af','idc'],['h','idc','vco'],['h','vco','exc'],['down','exc','pa'],['ant','pa'],['h','ref','pc'],['h','pc','lpf'],['v','lpf','vco'],['path','M552 76L552 276L357 276'],['dot',552,76],['v','div','pc']],
+ ticks:[[5,'音声'],[10,'f_ref'],[60,'送信']],
+ opts:[['loud','大きな声で話す',false],['idc','IDC を有効にする',true],['pll','PLL で周波数を安定化',true]],
+ hint:'PLL をオフにすると、VCO の中心周波数がふらついて、決められた周波数からずれていきます（赤）。',
+ calc(t,o){const raw=lvl(t)*(o.loud?2:1);const eff=o.idc?Math.min(raw,1):raw;const k=raw>0?eff/raw:1;const v=voice(t,o.loud?2:1);const b=2.5*eff;
+  const d=o.pll?0:(6*t-2+1.5*Math.sin(2*Math.PI*1.1*t));const off=Math.abs(d)>1.2;
+  const fm=a=>fmLines(60+d,2.5,b,a,12.5).map(l=>Object.assign(l,{bad:l.bad||off}));
+  return {af:scale(v,0.4),idc:scale(v,0.4*k),vco:fm(0.45),exc:fm(0.6),pa:fm(0.9),ref:[{f:10,a:0.45}],div:fmLines(10+d/6,2.5,b/6,0.4),
+   pc:o.pll?[{f:0.3,a:0.3}].concat(v.map(x=>({f:x.f,a:0.12*x.a}))):[{f:Math.max(0.3,Math.abs(d)),a:0.3}],
+   lpf:o.pll?[{f:0.3,a:0.3}]:[]};},
+ charts:{},
+ info:{af:['低周波増幅器の出力','音声を増幅します。'],
+  idc:['IDC 回路の出力','音声の振幅を一定以下に抑えて、周波数偏移が規定を超えないようにします。'],
+  vco:['VCO（電圧制御発振器）の出力','加えた電圧に応じて発振周波数が変わる発振器です。音声の電圧で、送信周波数を直接、周波数変調します。逓倍しないので、最初から必要な周波数偏移が得られます。'],
+  exc:['励振増幅器の出力','電力増幅器を駆動できるレベルまで増幅します。'],
+  pa:['電力増幅器の出力','FM 波は振幅が一定なので、効率のよい C 級増幅が使えます。'],
+  ref:['基準発振器の出力','水晶発振器による、非常に安定した基準周波数 f_ref です。'],
+  div:['分周器（÷N）の出力','VCO の出力を 1/N の周波数にして、基準周波数と比べられるようにします。周波数偏移も 1/N に小さくなります。'],
+  pc:['位相比較器の出力','分周した信号と基準信号の位相差を、電圧として出力します。直流分（周波数のずれ）のほかに、変調による音声成分も含まれます。'],
+  lpf:['低域フィルタの出力','直流に近いゆっくりした成分だけを VCO に戻し、中心周波数のずれを補正します。カットオフ周波数を音声より十分低くするのがポイントです。そうしないと、PLL が変調そのものを打ち消してしまいます。']}};
+
+D['dsh-rx']={name:'AM 受信機（ダブルスーパー）',fmax:120,desc:'ダブルスーパーヘテロダイン受信機。周波数変換を2回行います。第1中間周波数を高くしてイメージ周波数を遠ざけ、第2中間周波数を低くして選択度を上げます。',
+ blocks:[['ant',0,1,'アンテナ','入力'],['rf',0,0,'高周波','増幅器'],['mix1',1,0,'第1周波数','混合器'],['if1',2,0,'第1中間周波','増幅器'],['mix2',3,0,'第2周波数','混合器'],['lo1',1,1,'第1局部','発振器'],['lo2',2,1,'第2局部','発振器'],['if2',0,2,'第2中間周波','増幅器'],['det',1,2,'検波器',''],['afa',2,2,'低周波','増幅器']],
+ wires:[['antin2','ant'],['v','ant','rf'],['h','rf','mix1'],['h','mix1','if1'],['h','if1','mix2'],['v','lo1','mix1'],['path','M530 156L605 156L605 104'],['wrap','mix2','if2'],['h','if2','det'],['h','det','afa'],['spk','afa']],
+ ticks:[[10,'イメージ'],[20,'f_IF2',1],[30,'局発2'],[50,'f_IF1',1],[60,'局発1'],[70,'妨害',1],[96,'隣接'],[110,'受信',1]],
+ opts:[['strong','妨害波を強くする',false]],
+ hint:'赤は妨害波です。イメージ周波数（左端）は受信周波数から遠いので、高周波増幅器でほぼ消えます。隣接チャネルは、第2中間周波増幅器の狭い帯域で取り除きます。',
+ calc(t,o){const v=voice(t);const K=o.strong?2:1;
+  const am=(fc,a,bad)=>[{f:fc,a:a,bad:bad}].concat(...v.map(x=>[{f:fc-x.f,a:a*x.a*0.35/2,bad:bad},{f:fc+x.f,a:a*x.a*0.35/2,bad:bad}]));
+  const des=am(110,0.3);const adj=[{f:96,a:0.2*K,bad:1},{f:93,a:0.04*K,bad:1},{f:99,a:0.04*K,bad:1}];const img=[{f:10,a:0.2*K,bad:1}];const s2=[{f:70,a:0.2*K,bad:1}];
+  const ant=des.concat(adj,img,s2);
+  const rf=scale(des,2).concat(scale(adj,1.4),scale(s2,0.5),scale(img,0.03));
+  const cv=(ls,lo,g)=>ls.map(l=>Object.assign({},l,{f:Math.abs(l.f-lo),a:l.a*g}));
+  const mix1=cv(rf,60,0.8).concat([{f:60,a:0.08}]);
+  const if1=scale(mix1.filter(l=>Math.abs(l.f-50)<=15),1.5);
+  const mix2=cv(if1,30,0.8).concat([{f:30,a:0.08}]);
+  const if2=scale(mix2.filter(l=>Math.abs(l.f-20)<=8.5),1.4);const C=if2.filter(l=>l.f===20&&!l.bad).reduce((s,l)=>s+l.a,0);
+  const det=[{f:0.4,a:C*0.7}].concat(v.map(x=>({f:x.f,a:C*x.a*0.35})));
+  return {ant:ant,rf:rf,mix1:mix1,if1:if1,mix2:mix2,lo1:[{f:60,a:0.5}],lo2:[{f:30,a:0.5}],if2:if2,det:det,afa:v.map(x=>({f:x.f,a:Math.min(1,C*x.a*0.35*1.8)}))};},
+ charts:{},
+ info:{ant:['アンテナに届く電波','受信したい電波（右端）のほかに、隣接チャネル、イメージ周波数、第2イメージになる妨害波（赤）が届いています。'],
+  rf:['高周波増幅器の出力','イメージ周波数は受信周波数から 2×f_IF1 も離れているので、高周波増幅器の同調回路で、ほぼ完全に除去できます。これが、第1中間周波数を高くする理由です。'],
+  lo1:['第1局部発振器の出力','受信周波数より f_IF1 だけ低い周波数を出します。'],
+  mix1:['第1周波数混合器の出力','受信波が、高い第1中間周波数 f_IF1 に変換されました。わずかに残ったイメージも、同じ f_IF1 に重なります。'],
+  if1:['第1中間周波増幅器の出力','f_IF1 付近を増幅します。帯域は広めなので、隣接チャネルはまだ残っています。左側の妨害波（第2混合器でイメージになる成分）は、ここで除去されます。'],
+  mix2:['第2周波数混合器の出力','第2局部発振器で、低い第2中間周波数 f_IF2 に変換します。隣接チャネルは f_IF2 から離れた位置に移ります。'],
+  lo2:['第2局部発振器の出力','f_IF1 を f_IF2 に変換するための信号です。'],
+  if2:['第2中間周波増幅器の出力','周波数が低いので、帯域の狭い鋭いフィルタが作りやすく、隣接チャネルを取り除けます。これが、第2中間周波数を低くする理由です。'],
+  det:['検波器の出力','音声を取り出します。左端は直流分です。'],
+  afa:['低周波増幅器の出力','音声を増幅してスピーカを鳴らします。']}};
+
+const ORDER=['ssb-tx','ssb-rx','am-tx','am-rx','dsh-rx','fm-tx','fm-tx-d','fm-rx'];
+
+/* ---------- diagram ---------- */
+const CX=[50,225,400,575],RY=[50,130,250,335],BW=130,BH=52;
+const dia=document.getElementById('dia');
+let dev,cur,opt={};
+function drawDiagram(){
+ dia.innerHTML='';
+ const defs=el('defs',{},dia);const mk=el('marker',{id:'ar',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto'},defs);
+ el('path',{d:'M1 1L9 5L1 9',fill:'none',stroke:'#888780','stroke-width':1.6},mk);
+ const W=el('g',{},dia),G=el('g',{},dia);const P={};
+ dev.blocks.forEach(([id,c,r,t1,t2])=>{P[id]={x:CX[c],y:RY[r]};});
+ const R=id=>[P[id].x+BW,P[id].y+BH/2],L=id=>[P[id].x,P[id].y+BH/2],T=id=>[P[id].x+BW/2,P[id].y],Bm=id=>[P[id].x+BW/2,P[id].y+BH];
+ const wire=(d,arrow=true)=>el('path',{d:d,class:'wire','marker-end':arrow?'url(#ar)':''},W);
+ const txt=(x,y,s,anc)=>{el('text',{x:x,y:y,'font-size':13,'text-anchor':anc||'start'},W).textContent=s;};
+ dev.wires.forEach(w=>{const [k,a,b]=w;
+  if(k==='h'){const p=R(a),q=L(b);wire(`M${p[0]} ${p[1]}L${q[0]-2} ${q[1]}`);}
+  if(k==='v'){const p=T(a),q=Bm(b);wire(`M${p[0]} ${p[1]}L${q[0]} ${q[1]+2}`);}
+  if(k==='vd'||k==='down'){const p=Bm(a),q=T(b);wire(`M${p[0]} ${p[1]}L${q[0]} ${q[1]-2}`);}
+  if(k==='wrap'){const p=Bm(a),q=T(b);wire(`M${p[0]} ${p[1]}L${p[0]} 212L${q[0]} 212L${q[0]} ${q[1]-2}`);}
+  if(k==='fb'){const p=R(a),q=R(b);wire(`M${p[0]} ${p[1]}L752 ${p[1]}L752 ${q[1]}L${q[0]+2} ${q[1]}`);}
+  if(k==='rl'){const p=R(a),q=Bm(b);wire(`M${p[0]} ${p[1]}L${q[0]} ${p[1]}L${q[0]} ${q[1]+2}`);}
+  if(k==='in'){const q=L(a);const x0=q[0]>200?q[0]-120:4;txt(x0,q[1]-12,b);wire(`M${x0} ${q[1]}L${q[0]-2} ${q[1]}`);}
+  if(k==='ant'){const p=R(a);wire(`M${p[0]} ${p[1]}L728 ${p[1]}L728 ${p[1]-48}`,false);wire(`M716 ${p[1]-62}L728 ${p[1]-46}L740 ${p[1]-62}`,false);txt(728,p[1]-70,'アンテナ','middle');}
+  if(k==='antin'){const q=L(a);wire(`M22 ${q[1]-40}L22 ${q[1]}L${q[0]-2} ${q[1]}`);wire(`M10 ${q[1]-54}L22 ${q[1]-38}L34 ${q[1]-54}`,false);txt(4,q[1]-60,'アンテナ');}
+  if(k==='antin2'){const q=L(a);wire(`M22 ${q[1]-34}L22 ${q[1]}L${q[0]-2} ${q[1]}`);wire(`M10 ${q[1]-48}L22 ${q[1]-32}L34 ${q[1]-48}`,false);}
+  if(k==='path'){wire(a,b!==false);}
+  if(k==='dot'){el('circle',{cx:a,cy:b,r:3.5,fill:css('--line')},W);}
+  if(k==='spk'){const p=R(a);wire(`M${p[0]} ${p[1]}L${p[0]+36} ${p[1]}`);txt(p[0]+42,p[1]+5,'スピーカ');}
+ });
+ if(dev.startAnt){/* antenna input block (virtual) */}
+ dev.blocks.forEach(([id,c,r,t1,t2])=>{
+  const g=el('g',{class:'blk',tabindex:0,role:'button','data-id':id},G);
+  el('rect',{x:P[id].x,y:P[id].y,width:BW,height:BH,rx:6},g);
+  if(t2){el('text',{x:P[id].x+BW/2,y:P[id].y+21,'text-anchor':'middle'},g).textContent=t1;el('text',{x:P[id].x+BW/2,y:P[id].y+39,'text-anchor':'middle'},g).textContent=t2;}
+  else el('text',{x:P[id].x+BW/2,y:P[id].y+31,'text-anchor':'middle'},g).textContent=t1;
+  g.addEventListener('click',()=>select(id));
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(id);}});
+ });
+}
+
+/* ---------- waterfall ---------- */
+const wf=document.getElementById('wf');
+let FMAX=100,SC=6.0;const T=26,X0=40,DX=3.0,DY=8.0,BASE=330,H=95;
+function rnd(i,f){const x=Math.sin(i*12.9898+f*78.233)*43758.5453;return x-Math.floor(x);}
+function spec(ls,f,i){let s=0;ls.forEach(l=>{if(l.noise!==undefined){if(f>=l.f0&&f<=l.f1)s+=l.noise*l.shape(f)*(0.3+0.7*rnd(i,f));}else s+=l.a*Math.exp(-((f-l.f)**2)/(2*0.45**2));});return s;}
+function drawWF(){
+ wf.innerHTML='';FMAX=dev.fmax||100;SC=600/FMAX;
+ document.getElementById('ttl').textContent=dev.info[cur][0];
+ document.getElementById('cap').textContent=dev.info[cur][1];
+ const calc=t=>dev.calc(t,opt);
+ if(dev.charts[cur]){drawChart(dev.charts[cur](opt,calc));return;}
+ const fill=css('--fill'),wave=css('--wave'),bad=css('--bad');
+ for(let i=T-1;i>=0;i--){
+  const t=i/(T-1);const ls=calc(t)[cur]||[];const ox=X0+i*DX,oy=BASE-i*DY;
+  let d=`M${ox} ${oy}`;for(let f=0;f<=FMAX;f+=0.25){d+=`L${(ox+f*SC).toFixed(1)} ${(oy-Math.min(1.25,spec(ls,f,i))*H).toFixed(1)}`;}
+  d+=`L${ox+FMAX*SC} ${oy}Z`;
+  el('path',{d:d,fill:fill,stroke:wave,'stroke-width':0.9},wf);
+  ls.filter(l=>l.bad&&l.a>0.008&&l.f>=0&&l.f<=FMAX).forEach(l=>{const x=ox+l.f*SC;el('line',{x1:x,x2:x,y1:oy,y2:oy-Math.min(1.25,l.a)*H,stroke:bad,'stroke-width':2.2},wf);});
+ }
+ if(cur==='pa'&&dev===D['ssb-tx']){el('line',{x1:X0,x2:X0+FMAX*SC,y1:BASE-H,y2:BASE-H,stroke:css('--mut'),'stroke-dasharray':'4 4'},wf);el('text',{x:X0+4,y:BASE-H-6,'font-size':13,fill:css('--mut')},wf).textContent='出力の上限';}
+ axes();
+}
+function axes(){
+ const m=css('--mut');
+ el('line',{x1:X0,y1:BASE+2,x2:X0+FMAX*SC,y2:BASE+2,stroke:m},wf);
+ dev.ticks.forEach(([f,s,r])=>{const x=X0+f*SC;el('line',{x1:x,x2:x,y1:BASE+2,y2:BASE+8+(r?16:0),stroke:m},wf);el('text',{x:x,y:BASE+24+(r?18:0),'text-anchor':'middle','font-size':14},wf).textContent=s;});
+ el('text',{x:X0+FMAX*SC,y:BASE+62,'text-anchor':'end','font-size':13,fill:m},wf).textContent='周波数 →';
+ el('line',{x1:X0-12,y1:BASE-2,x2:X0-12+(T-1)*DX,y2:BASE-2-(T-1)*DY,stroke:m},wf);
+ el('text',{x:X0-8,y:BASE-(T-1)*DY-16,'font-size':13,fill:m},wf).textContent='時間（奥へ）';
+}
+function drawChart(cfg){
+ const L=60,R=720,Tp=70,Bt=320,N=200,m=css('--mut'),wave=css('--wave');
+ const sx=t=>L+(R-L)*t,sy=v=>Bt-v*200;
+ el('line',{x1:L,x2:R,y1:Bt,y2:Bt,stroke:m},wf);el('line',{x1:L,x2:L,y1:Tp-20,y2:Bt,stroke:m},wf);
+ if(cfg.limit){el('line',{x1:L,x2:R,y1:sy(cfg.limit[0]),y2:sy(cfg.limit[0]),stroke:m,'stroke-dasharray':'2 4'},wf);el('text',{x:R,y:sy(cfg.limit[0])-6,'text-anchor':'end','font-size':13,fill:m},wf).textContent=cfg.limit[1];}
+ const sty={gray:{stroke:m,'stroke-width':1.2,'stroke-dasharray':'2 3'},dash:{stroke:m,'stroke-width':1.6,'stroke-dasharray':'7 4'},solid:{stroke:wave,'stroke-width':2.6}};
+ cfg.series.forEach((s,k)=>{let d='';for(let j=0;j<=N;j++){const t=j/N;d+=(j?'L':'M')+sx(t).toFixed(1)+' '+sy(Math.min(1.3,s.fn(t))).toFixed(1);}
+  el('path',Object.assign({d:d,fill:'none'},sty[s.style]),wf);
+  const lx=L+k*225,ly=20;el('line',Object.assign({x1:lx,x2:lx+26,y1:ly,y2:ly},sty[s.style]),wf);el('text',{x:lx+32,y:ly+5,'font-size':13},wf).textContent=s.label;});
+ el('text',{x:R,y:Bt+22,'text-anchor':'end','font-size':13,fill:m},wf).textContent='時間 →';
+ if(cfg.note)el('text',{x:(L+R)/2,y:Bt+48,'text-anchor':'middle','font-size':14,fill:css('--acc')},wf).textContent=cfg.note;
+}
+
+/* ---------- antenna input view for receivers ---------- */
+function addAntennaView(d){if(!d.startAnt)return;const orig=d.calc;d.calc=(t,o)=>{const r=orig(t,o);r.ant=r._ant;return r;};
+ d.blocks.unshift(['ant',0,1,'アンテナ','入力']);d.info.ant=['アンテナに届く電波','目的の電波のほかに、妨害波（赤）や雑音も一緒に届きます。'];}
+ORDER.forEach(k=>addAntennaView(D[k]));
+/* place antenna-input block below RF amp (row1, col0) and feed it into rf */
+ORDER.forEach(k=>{const d=D[k];if(d.startAnt){d.wires=d.wires.filter(w=>w[0]!=='antin');d.wires.unshift(['v','ant','rf']);d.wires.unshift(['antin2','ant']);}});
+
+/* ---------- controls & routing ---------- */
+function buildControls(){
+ const c=document.getElementById('ctl');c.innerHTML='';opt={};
+ dev.opts.forEach(([k,label,def])=>{opt[k]=def;const lb=document.createElement('label');const cb=document.createElement('input');cb.type='checkbox';cb.checked=def;
+  cb.addEventListener('change',()=>{opt[k]=cb.checked;drawWF();});lb.appendChild(cb);lb.appendChild(document.createTextNode(' '+label));c.appendChild(lb);});
+ document.getElementById('hint').textContent=dev.hint||'';
+}
+function select(id){cur=id;document.querySelectorAll('.blk').forEach(g=>g.classList.toggle('on',g.dataset.id===id));drawWF();}
+function load(key){
+ if(!D[key])key='ssb-tx';dev=D[key];
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===key));
+ document.getElementById('desc').textContent=dev.desc;
+ buildControls();drawDiagram();select(dev.blocks[0][0]);
+}
+const tabs=document.getElementById('tabs');
+ORDER.forEach(k=>{const b=document.createElement('button');b.textContent=D[k].name;b.dataset.k=k;b.addEventListener('click',()=>{location.hash=k;});tabs.appendChild(b);});
+window.addEventListener('hashchange',()=>load(location.hash.slice(1)));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{drawDiagram();select(cur);});
+load(location.hash.slice(1));
+    </script>
+  </body>
+</html>
